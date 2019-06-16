@@ -1,0 +1,22 @@
+{
+  "name": "webmol",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shijie Yao",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "parcel-bundler": "^1.12.3"
+  },
+  "dependencies": {
+    "stats-js": "^1.0.1",
+    "three": "^0.71.1"
+  }
+}
