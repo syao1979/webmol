@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>Beginning my Three.js Journey</title>
+		<style>body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+
+			/* overwrite jq css */
+			.ui-tabs-anchor {
+				font-size: 12px;
+				padding: 2px;
+			}
+			.ui-widget-content {
+				padding: 0px;
+			}</style>
+
+		<!-- so no scrollbar will shown -->
+		<style>body { 
+				margin: 0; 
+				height: 100vh;
+			}
+			canvas { 
+				display: block;
+			}</style>
+
+		<!-- tab ui -->
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+		<style>/*  overwrite jq css */
+	        .ui-tabs-anchor {
+	          font-size: 11px;
+	          padding: 2px;
+	        }
+	        .ui-widget-content {
+	          padding: 0px;
+	        }</style>
+
+	  	<!-- CDN Link to Three.js -->
+		<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.js"></script> -->
+		<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/105/three.min.js"></script> -->
+
+	</head>
+	<body>
+    	<span id="pdb" style="display: none">
+			ATOM    613  P     G A  67      -1.042   2.766  14.766  1.00  0.00      163D 734
+			ATOM    614  O1P   G A  67      -1.209   2.867  13.299  1.00  0.00      163D 735
+			ATOM    615  O2P   G A  67      -0.677   3.983  15.523  1.00  0.00      163D 736
+			ATOM    616  O5*   G A  67       0.063   1.631  15.054  1.00  0.00      163D 737
+			ATOM    617  C5*   G A  67       1.291   1.651  14.354  1.00  0.00      163D 738
+			ATOM    618  C4*   G A  67       2.129   0.399  14.621  1.00  0.00      163D 739
+			ATOM    619  O4*   G A  67       1.359  -0.786  14.521  1.00  0.00      163D 740
+			ATOM    620  C3*   G A  67       3.267   0.298  13.600  1.00  0.00      163D 741
+			ATOM    621  O3*   G A  67       4.385   1.039  14.066  1.00  0.00      163D 742
+			ATOM    622  C2*   G A  67       3.445  -1.212  13.485  1.00  0.00      163D 743
+			ATOM    623  O2*   G A  67       4.229  -1.707  14.551  1.00  0.00      163D 744
+			ATOM    624  C1*   G A  67       2.001  -1.697  13.645  1.00  0.00      163D 745
+			ATOM    625  N9    G A  67       1.240  -1.747  12.371  1.00  0.00      163D 746
+			ATOM    626  C8    G A  67       0.127  -1.027  12.009  1.00  0.00      163D 747
+			ATOM    627  N7    G A  67      -0.546  -1.537  11.018  1.00  0.00      163D 748
+			ATOM    628  C5    G A  67       0.195  -2.657  10.663  1.00  0.00      163D 749
+			ATOM    629  C6    G A  67      -0.059  -3.648   9.669  1.00  0.00      163D 750
+			ATOM    630  O6    G A  67      -1.066  -3.788   8.983  1.00  0.00      163D 751
+			ATOM    631  N1    G A  67       1.011  -4.524   9.510  1.00  0.00      163D 752
+			ATOM    632  C2    G A  67       2.167  -4.489  10.268  1.00  0.00      163D 753
+			ATOM    633  N2    G A  67       3.119  -5.378   9.974  1.00  0.00      163D 754
+			ATOM    634  N3    G A  67       2.363  -3.620  11.274  1.00  0.00      163D 755
+			ATOM    635  C4    G A  67       1.344  -2.729  11.415  1.00  0.00      163D 756
+			ATOM    636 1H5*   G A  67       1.862   2.527  14.660  1.00  0.00      163D 757
+			ATOM    637 2H5*   G A  67       1.084   1.711  13.286  1.00  0.00      163D 758
+			ATOM    638  H4*   G A  67       2.539   0.437  15.631  1.00  0.00      163D 759
+			ATOM    639  H3*   G A  67       2.940   0.661  12.628  1.00  0.00      163D 760
+			ATOM    640 1H2*   G A  67       3.880  -1.509  12.530  1.00  0.00      163D 761
+			ATOM    641 2HO*   G A  67       5.131  -1.401  14.408  1.00  0.00      163D 762
+			ATOM    642  H1*   G A  67       1.987  -2.695  14.086  1.00  0.00      163D 763
+			ATOM    643  H8    G A  67      -0.195  -0.137  12.523  1.00  0.00      163D 764
+			ATOM    644  H1    G A  67       0.901  -5.246   8.809  1.00  0.00      163D 765
+			ATOM    645 1H2    G A  67       3.974  -5.385  10.510  1.00  0.00      163D 766
+			ATOM    646 2H2    G A  67       2.985  -6.042   9.223  1.00  0.00      163D 767
+    	</span>
+    	
+
+    	<table id="tools" style="font-family: monospace;">
+    		<tr>
+    			<td> Open : </td>
+    			<td>
+    				<input type="file" id="files" name="files[]" multiple=""><output id="list"></output>
+    			</td>
+    			<td> Model : </td>
+    			<td style="font-family: monospace; font-size: 10px"> 
+    				<select id="model_select" onchange="do_model()">
+	    				<option>CPK</option>
+	    				<option>BallStick</option>
+	    				<option>BallStick2</option>
+	    				<option>Stick</option>
+	    				<option>Wire</option>
+	    				<option>Wire2</option>
+	    			</select>
+	    		</td>
+
+    		</tr>
+    	</table>
+
+    	<!-- tabed content -->
+		<div id="tabs" style="display: none">
+		  <ul>
+		    <li><a href="#tabs-1">WebGL</a></li>
+		    <li><a href="#tabs-2">Info</a></li>
+		  </ul>
+		  <div id="tabs-1">
+		  	
+		    <div id="glview" style="width: 800px; height: 380px; border: solid 1px #888; position: relative;"></div>
+		  </div>
+		  <div id="tabs-2">
+		    <p>Place holder</p>
+		  </div>
+		</div>
+
+		<!-- <div id="glview" style="width: 600px; height: 450px; border: solid 1px #888"></div> -->
+		<!-- <div style="position: absolute; top: 10px; left: 20px; text-align: center;"></div> -->
+    	<!-- <script src="./js/three.min.71.js"></script>
+	    <script src="./js/OrbitControls.js"></script>
+	    <script src="./js/stats.min.js"></script> -->
+
+		<!--reference your JS file here. Mine looks like below-->
+		<!-- <script src="./geometry.js"></script> -->
+		
+		<!-- <script src="./js/molbase.js"></script> -->
+		<!-- <script src="./model.js"></script>
+		<script src="./js/mouse.js"></script> -->
+    	<!-- <script src="./mygl.js"></script> -->
+    	<!-- <script src="./mygl2.js"></script> -->
+    	
+    	<script src="./js.00a46daa.js"></script>
+	</body>
+</html>
