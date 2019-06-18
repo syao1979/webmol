@@ -1,5 +1,8 @@
 import { Atom, Bond } from './js/molbase';
 
+const parsePdb = require('parse-pdb');
+const { readFileSync } = require('fs');
+
 class MModel{
 	constructor(){
 		this.mol = { };		// molecule data structure
@@ -7,42 +10,44 @@ class MModel{
 	}
 
 	loadMol(datastr, datatype="pdb", mname="Mol"){
-		
-		while (mname in this.mol){
-			mname += "_"
-		}
+		let acnt = 0;
 		if (datatype.toLowerCase() == "pdb"){
-			this.status = this._pdbToMol(datastr, mname);
+			const mjson = parsePdb(datastr);
+	        console.log(mjson)
+	        if (mjson.atoms.length > 0){
+	            while (mname in this.mol){
+					mname += "_"
+				}
+
+				mjson.atoms.forEach( (a) => {
+					a.molecule = mname
+					let atom = new Atom(a)
+					if (atom.OK){
+						this._addobj(atom);
+						acnt++;
+					}
+				})
+	        }
 		}
+		return (acnt > 0);
+		
 	}
 
-	_pdbToMol(datastr, mname){
-		let atoms = [];
-
-		datastr.split("\n").forEach( (line) => {
-			let atom = new Atom(line, mname)
-			if (atom.OK){
-				this._addobj(atom);
-			}
-		})
-
-		return true;
-	}
 
 	_addobj(atom){
 		if ( !(atom.molecule in this.mol) ){
 			this.mol[atom.molecule] = {};
 		}
 
-		if ( !(atom.chain in this.mol[atom.molecule]) ){
-			this.mol[atom.molecule][atom.chain] = {};
+		if ( !(atom.chainID in this.mol[atom.molecule]) ){
+			this.mol[atom.molecule][atom.chainID] = {};
 		}
 		
-		if ( !(atom.group in this.mol[atom.molecule][atom.chain]) ){
-			this.mol[atom.molecule][atom.chain][atom.group] = [];
+		if ( !(atom.resName in this.mol[atom.molecule][atom.chainID]) ){
+			this.mol[atom.molecule][atom.chainID][atom.resName] = [];
 		}
 
-		this.mol[atom.molecule][atom.chain][atom.group].push(atom)
+		this.mol[atom.molecule][atom.chainID][atom.resName].push(atom)
 	}
 
 	get_gl_objects(mname, model="cpk"){
@@ -172,7 +177,6 @@ class MModel{
 				atom.set(atom.x-xm, atom.y-ym, atom.z-zm)
 			})
 		}
-
 
 		return atomlist;
 	}

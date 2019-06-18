@@ -1,74 +1,38 @@
 import THREE from 'three';
 
 class Atom extends THREE.Vector3 {
-	type = "C";		// Atom type, H, C, O etc
+	element = "C";		// Atom type, H, C, O etc
 	name = "C";		// name, C2 etc
 	OK = false	
 
-	constructor(sline, molName="MolName", format="pdb"){
+	// constructor(sline, molName="MolName", format="pdb"){
+	// 	super();
+	// 	if (format == "pdb"){
+	// 		this.parsePDB(sline, molName);
+	// 	}
+	// }
+
+	constructor(data){
 		super();
-		if (format == "pdb"){
-			this.parsePDB(sline, molName);
-		}
+
+		this.molecule = data.molecule;
+		this.name = data.name;	// atom nme
+		this.group = data.resName;	// residue name
+		this.chain = data.chainID;			// chain name
+		this.element = data.element;
+		super.set(data.x, data.y, data.z)
+		
+		this.OK = (data.molecule && data.name && data.resName && data.chainID && data.element);
 	}
 
-	parsePDB(line, molName){
-		/*
-		 * PDB parser
-		 * line : 
-		 * 1-6	ATOM or HETATM	: character
-		 * 7-11	Atom serial number	right	integer
-		 * 13-16	Atom name	left*	character
-		 * 17	Alternate location indicator		character
-		 * 18-20§	Residue name	right	character
-		 * 22	Chain identifier		character
-		 * 23-26	Residue sequence number	right	integer
-		 * 27	Code for insertions of residues		character
-		 * 31-38	X orthogonal Å coordinate	right	real (8.3)
-		 * 39-46	Y orthogonal Å coordinate	right	real (8.3)
-		 * 47-54	Z orthogonal Å coordinate	right	real (8.3)
-		 * 55-60	Occupancy	right	real (6.2)
-		 * 61-66	Temperature factor	right	real (6.2)
-		 * 73-76	Segment identifier¶	left	character
-		 * 77-78	Element symbol	right	character
-		 */
-
-		line = line.trim();
-		if (line.length > 66){
-			this.molecule = molName;
-			let rtype = line.substr(0,6).trim();	// record type
-			let snum = line.substr(6,6).trim();		// serial number
-			this.name = line.substr(12,4).trim();	// atom nme
-			let loc = line.substr(16,1);			// alternate loction
-			this.group = line.substr(17,3).trim();	// residue name
-			this.chain = line.substr(21,1);			// chain name
-			let gnum = line.substr(22,4);			// redidue sequence number
-			let icode = line.substr(26,1);			// code for insertion of residues
-			let x = parseFloat(line.substr(30,8));	//
-			let y = parseFloat(line.substr(38,8));	//
-			let z = parseFloat(line.substr(46,8));	//
-			let occ = line.substr(54,6);			// Occupancy
-			let temp = line.substr(60,6);			// temperature factor
-			let atype = "";
-			if (line.length > 77){					// element symbol
-				let atype = line.substr(76,2).trim().toUpperCase();
-			}
-			atype = this.pdbName2type(this.name);
-
-			this.type = atype;
-			super.set(x,y,z)
-			
-			this.OK = true;
-		}
-	}
 
 	ball(quality=36, scale=1.0){
 		// Set up the mesh lets
 		const SEGMENTS = quality;
 		const RINGS = quality;
 
-		let size = Atom.VDWR[Atom.ATOM_NUMBER[this.type]];
-		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.type]];
+		let size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
+		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.element]];
 
 		const material = new THREE.MeshLambertMaterial( 
 				{ 
@@ -89,32 +53,21 @@ class Atom extends THREE.Vector3 {
 	}
 
 	wrapupGLMesh (obj) {
-		[obj.name, obj.mol, obj.chain, obj.group] = [this.name, this.mol, this.chain, this.group];
+		[obj.name, obj.molecule, obj.chain, obj.group] = [this.name, this.molecule, this.chain, this.group];
+		obj.molname = this.molecule;
 		obj.name = this.name;
 		obj.type = "ATOM";
 		return obj;
 	}
 
 	toString(){
-		return `type=${this.type}; name=${this.name}; pos=${this.toArray()}`;
+		return `type=${this.element}; name=${this.name}; pos=${this.toArray()}`;
 	}
 
 	atomicNum(){
-		return Atom.ATOM_NUMBER[this.type];
+		return Atom.ATOM_NUMBER[this.element];
 	}
 
-	//from the atom name in PDB format to atom symbol
-	pdbName2type(pdbname){
-		pdbname = pdbname.trim().toUpperCase();
-		let atype = /^\d/.test(pdbname) ? pdbname.substr(1) : pdbname;	// remove leading digit
-		atype = atype.length == 1 ? atype : atype.substr(0,2);		// at most 2 chars
-		
-		if ( !(atype == "NA" || atype == "CL" || atype == "MG") ){
-			return atype[0];
-		} else {
-			return atype;
-		}
-	}
 }
 
 Atom.ATOM_CPK = {
@@ -168,21 +121,21 @@ Atom.COLOR = [
 	0x00ffff,	//0 dummy
 	0xffffff,	//1 H
 	0x88ffff,	//2 He
-	0x8844ff, //3 Li
+	0x8844ff, 	//3 Li
 	0x99ff00,	//4 Be
-	0xff9999, //5 B
-	0x888888, //6 C
+	0xff9999, 	//5 B
+	0x888888, 	//6 C
 	0x7777ff,	//7 N
 	0xee0000,	//8 O
 	0x88ffff,	//9 F
-	0x668899, //10 Ne
-	0x663695,, //11 Na
+	0x668899, 	//10 Ne
+	0x663695, 	//11 Na
 	0x530000,	//12 Mg
-	0x826565, //13 Al
+	0x826565, 	//13 Al
 	0x506060,	//14 Si
 	0xff8000,	//15 P
 	0xff8020,	//16 S
-	0x158070, //17 Cl
+	0x158070, 	//17 Cl
 	0x80b0c0,	//18 Ar
 	0x80b0c0,   //19 K
 	0x80b0c0,   //20 Ca
@@ -251,7 +204,7 @@ Atom.COLOR = [
 //====================================
 
 class Bond{
-	pair = []
+	pair = [];
 	constructor( cfg ){
 		if (cfg){
 			if (cfg.from){
@@ -279,7 +232,7 @@ class Bond{
 
 		// the 2 ends
 		for (let i=0; i<2; i++) {
-			color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[i].type]] );
+			color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[i].element]] );
 			[ positions[ i * 3 ], positions[ i * 3 + 1 ], positions[ i * 3 + 2] ] = this.pair[i].toArray();
 			[ colors[ i * 3 ], colors[ i * 3 + 1 ], colors[ i * 3 + 2 ] ] = color.toArray();
 		}
@@ -289,6 +242,7 @@ class Bond{
 
 		// line
 		let line = new THREE.Line( geometry, lineMaterial );
+		line.group = this.pair[0].group;
 		return this.wrapupGLMesh(line);
 	}
 
@@ -318,14 +272,14 @@ class Bond{
 		// the 4 ends
 		let n = 0;
 
-		color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].type]] );
+		color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]] );
 		[ positions[ n * 3 ], positions[ n * 3 + 1 ], positions[ n * 3 + 2] ] = pt1;
 		[ colors[ n * 3 ], colors[ n * 3 + 1 ], colors[ n * 3 + 2 ] ] = color.toArray();
 		n++;
 		[ positions[ n * 3 ], positions[ n * 3 + 1 ], positions[ n * 3 + 2] ] = ptm;
 		[ colors[ n * 3 ], colors[ n * 3 + 1 ], colors[ n * 3 + 2 ] ] = color.toArray();
 
-		color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].type]] );
+		color.set ( Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]] );
 		n++;
 		[ positions[ n * 3 ], positions[ n * 3 + 1 ], positions[ n * 3 + 2] ] = ptm;
 		[ colors[ n * 3 ], colors[ n * 3 + 1 ], colors[ n * 3 + 2 ] ] = color.toArray();
@@ -339,10 +293,11 @@ class Bond{
 
 		// line
 		let line = new THREE.Line( geometry, lineMaterial );
+		line.group = this.pair[0].group;
 		return this.wrapupGLMesh(line);
 	}
 
-	_cylinder(v1, v2, color, size, name, matename, cone){
+	_cylinder(v1, v2, color, size, atom, matename, cone){
 	    let direction = new THREE.Vector3().subVectors(v1, v2);
 	    let orientation = new THREE.Matrix4();
 	    orientation.lookAt(v1, v2, new THREE.Object3D().up);
@@ -363,9 +318,10 @@ class Bond{
 	    edge.position.x = 0.5 * (v1.x + v2.x );
 	   	edge.position.y = 0.5 * (v1.y + v2.y );
 	   	edge.position.z = 0.5 * (v1.z + v2.z );
-	   	// edge.name = name
+	   	
 	   	edge.type = "BOND";
-	   	edge.name = `${name}-${matename}`;
+	   	edge.group = atom.group;
+	   	edge.name = `${atom.name}-${matename}`;
 
 	    return edge;
 	}
@@ -373,12 +329,12 @@ class Bond{
 	cylinder(cone=false){
 		let v1 = this.pair[0];
 		let v2 = new THREE.Vector3(...this.center_position());
-		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].type]];
-		let c1 = this._cylinder( v1, v2, color, 0.06, v1.name, this.pair[1].name, cone );
+		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
+		let c1 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[1].name, cone );
 
 		v1 = this.pair[1];
-		color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].type]];
-		let c2 = this._cylinder( v1, v2, color, 0.06, v1.name, this.pair[0].name, cone );
+		color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
+		let c2 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[0].name, cone );
 
 		c1.mate = c2;
 		c2.mate = c1;
@@ -465,6 +421,7 @@ class Bond{
 	}
 
 	wrapupGLMesh(obj){
+		[obj.molecule, obj.chain] = [this.pair[0].molecule, this.pair[1].chain];
 		obj.name = `${this.pair[0].name}-${this.pair[1].name}`;
 		obj.type = "BOND";
 		obj.atoms = this.pair

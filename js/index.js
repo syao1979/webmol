@@ -15,11 +15,14 @@ import MyGL2 from '../mygl2';
 
 var GL = null;
 // when DOM is ready ...
-	$( function() {
+$( function() {
 	$( "#tabs" ).tabs().show();
 	GL = new MyGL2("glview");
 	// GL.loadMol($("#pdb").html());
-	} );
+	if (process.env.NODE_ENV === 'development'){
+		window.GL = GL;
+	}
+} );
 
 
 function do_model(){
@@ -27,6 +30,11 @@ function do_model(){
 	if (GL.model){
 		GL.reloadModel("MOL1", model);
 	}
+}
+
+function do_demo1(){
+	console.log('demo')
+	GL.loadMol($("#demo1_data").html().trim(), "pdb", "MOL1", $("#model_select").val())
 }
 
 function handleFileSelect(evt) {
@@ -47,7 +55,6 @@ function handleFileSelect(evt) {
     } 
 }
 
-if (process.env.NODE_ENV === 'development')
-	window.GL = GL;
-
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
+document.getElementById('model_select').addEventListener('change', do_model);
+document.getElementById("demo1").addEventListener('click', do_demo1);

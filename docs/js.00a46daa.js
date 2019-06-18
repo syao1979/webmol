@@ -36043,15 +36043,15 @@ function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) ===
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
 function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
 
 function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -36062,97 +36062,41 @@ function (_THREE$Vector) {
 
   // Atom type, H, C, O etc
   // name, C2 etc
-  function Atom(sline) {
+  // constructor(sline, molName="MolName", format="pdb"){
+  // 	super();
+  // 	if (format == "pdb"){
+  // 		this.parsePDB(sline, molName);
+  // 	}
+  // }
+  function Atom(data) {
     var _this;
-
-    var molName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "MolName";
-    var format = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "pdb";
 
     _classCallCheck(this, Atom);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Atom).call(this));
 
-    _defineProperty(_assertThisInitialized(_this), "type", "C");
+    _defineProperty(_assertThisInitialized(_this), "element", "C");
 
     _defineProperty(_assertThisInitialized(_this), "name", "C");
 
     _defineProperty(_assertThisInitialized(_this), "OK", false);
 
-    if (format == "pdb") {
-      _this.parsePDB(sline, molName);
-    }
+    _this.molecule = data.molecule;
+    _this.name = data.name; // atom nme
 
+    _this.group = data.resName; // residue name
+
+    _this.chain = data.chainID; // chain name
+
+    _this.element = data.element;
+
+    _get(_getPrototypeOf(Atom.prototype), "set", _assertThisInitialized(_this)).call(_assertThisInitialized(_this), data.x, data.y, data.z);
+
+    _this.OK = data.molecule && data.name && data.resName && data.chainID && data.element;
     return _this;
   }
 
   _createClass(Atom, [{
-    key: "parsePDB",
-    value: function parsePDB(line, molName) {
-      /*
-       * PDB parser
-       * line : 
-       * 1-6	ATOM or HETATM	: character
-       * 7-11	Atom serial number	right	integer
-       * 13-16	Atom name	left*	character
-       * 17	Alternate location indicator		character
-       * 18-20§	Residue name	right	character
-       * 22	Chain identifier		character
-       * 23-26	Residue sequence number	right	integer
-       * 27	Code for insertions of residues		character
-       * 31-38	X orthogonal Å coordinate	right	real (8.3)
-       * 39-46	Y orthogonal Å coordinate	right	real (8.3)
-       * 47-54	Z orthogonal Å coordinate	right	real (8.3)
-       * 55-60	Occupancy	right	real (6.2)
-       * 61-66	Temperature factor	right	real (6.2)
-       * 73-76	Segment identifier¶	left	character
-       * 77-78	Element symbol	right	character
-       */
-      line = line.trim();
-
-      if (line.length > 66) {
-        this.molecule = molName;
-        var rtype = line.substr(0, 6).trim(); // record type
-
-        var snum = line.substr(6, 6).trim(); // serial number
-
-        this.name = line.substr(12, 4).trim(); // atom nme
-
-        var loc = line.substr(16, 1); // alternate loction
-
-        this.group = line.substr(17, 3).trim(); // residue name
-
-        this.chain = line.substr(21, 1); // chain name
-
-        var gnum = line.substr(22, 4); // redidue sequence number
-
-        var icode = line.substr(26, 1); // code for insertion of residues
-
-        var x = parseFloat(line.substr(30, 8)); //
-
-        var y = parseFloat(line.substr(38, 8)); //
-
-        var z = parseFloat(line.substr(46, 8)); //
-
-        var occ = line.substr(54, 6); // Occupancy
-
-        var temp = line.substr(60, 6); // temperature factor
-
-        var atype = "";
-
-        if (line.length > 77) {
-          // element symbol
-          var _atype = line.substr(76, 2).trim().toUpperCase();
-        }
-
-        atype = this.pdbName2type(this.name);
-        this.type = atype;
-
-        _get(_getPrototypeOf(Atom.prototype), "set", this).call(this, x, y, z);
-
-        this.OK = true;
-      }
-    }
-  }, {
     key: "ball",
     value: function ball() {
       var _mesh$position;
@@ -36162,8 +36106,8 @@ function (_THREE$Vector) {
       // Set up the mesh lets
       var SEGMENTS = quality;
       var RINGS = quality;
-      var size = Atom.VDWR[Atom.ATOM_NUMBER[this.type]];
-      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.type]];
+      var size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
+      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.element]];
       var material = new _three.default.MeshLambertMaterial({
         color: color,
         opacity: 1.0,
@@ -36182,11 +36126,12 @@ function (_THREE$Vector) {
   }, {
     key: "wrapupGLMesh",
     value: function wrapupGLMesh(obj) {
-      var _ref = [this.name, this.mol, this.chain, this.group];
+      var _ref = [this.name, this.molecule, this.chain, this.group];
       obj.name = _ref[0];
-      obj.mol = _ref[1];
+      obj.molecule = _ref[1];
       obj.chain = _ref[2];
       obj.group = _ref[3];
+      obj.molname = this.molecule;
       obj.name = this.name;
       obj.type = "ATOM";
       return obj;
@@ -36194,27 +36139,12 @@ function (_THREE$Vector) {
   }, {
     key: "toString",
     value: function toString() {
-      return "type=".concat(this.type, "; name=").concat(this.name, "; pos=").concat(this.toArray());
+      return "type=".concat(this.element, "; name=").concat(this.name, "; pos=").concat(this.toArray());
     }
   }, {
     key: "atomicNum",
     value: function atomicNum() {
-      return Atom.ATOM_NUMBER[this.type];
-    } //from the atom name in PDB format to atom symbol
-
-  }, {
-    key: "pdbName2type",
-    value: function pdbName2type(pdbname) {
-      pdbname = pdbname.trim().toUpperCase();
-      var atype = /^\d/.test(pdbname) ? pdbname.substr(1) : pdbname; // remove leading digit
-
-      atype = atype.length == 1 ? atype : atype.substr(0, 2); // at most 2 chars
-
-      if (!(atype == "NA" || atype == "CL" || atype == "MG")) {
-        return atype[0];
-      } else {
-        return atype;
-      }
+      return Atom.ATOM_NUMBER[this.element];
     }
   }]);
 
@@ -36283,7 +36213,7 @@ Atom.COLOR = [0x00ffff, //0 dummy
 0xee0000, //8 O
 0x88ffff, //9 F
 0x668899, //10 Ne
-0x663695,, //11 Na
+0x663695, //11 Na
 0x530000, //12 Mg
 0x826565, //13 Al
 0x506060, //14 Si
@@ -36390,7 +36320,7 @@ function () {
       var color = new _three.default.Color(); // the 2 ends
 
       for (var i = 0; i < 2; i++) {
-        color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[i].type]]);
+        color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[i].element]]);
 
         var _this$pair$i$toArray = this.pair[i].toArray();
 
@@ -36413,6 +36343,7 @@ function () {
       geometry.addAttribute('color', new _three.default.BufferAttribute(colors, 3)); // line
 
       var line = new _three.default.Line(geometry, lineMaterial);
+      line.group = this.pair[0].group;
       return this.wrapupGLMesh(line);
     }
   }, {
@@ -36441,7 +36372,7 @@ function () {
       var ptm = this.center_position(); // the 4 ends
 
       var n = 0;
-      color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].type]]);
+      color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]]);
 
       var _pt = _slicedToArray(pt1, 3);
 
@@ -36471,7 +36402,7 @@ function () {
       colors[n * 3] = _color$toArray6[0];
       colors[n * 3 + 1] = _color$toArray6[1];
       colors[n * 3 + 2] = _color$toArray6[2];
-      color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].type]]);
+      color.set(Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]]);
       n++;
 
       var _ptm2 = _slicedToArray(ptm, 3);
@@ -36506,11 +36437,12 @@ function () {
       geometry.addAttribute('color', new _three.default.BufferAttribute(colors, 3)); // line
 
       var line = new _three.default.Line(geometry, lineMaterial);
+      line.group = this.pair[0].group;
       return this.wrapupGLMesh(line);
     }
   }, {
     key: "_cylinder",
-    value: function _cylinder(v1, v2, color, size, name, matename, cone) {
+    value: function _cylinder(v1, v2, color, size, atom, matename, cone) {
       var direction = new _three.default.Vector3().subVectors(v1, v2);
       var orientation = new _three.default.Matrix4();
       orientation.lookAt(v1, v2, new _three.default.Object3D().up);
@@ -36526,10 +36458,10 @@ function () {
 
       edge.position.x = 0.5 * (v1.x + v2.x);
       edge.position.y = 0.5 * (v1.y + v2.y);
-      edge.position.z = 0.5 * (v1.z + v2.z); // edge.name = name
-
+      edge.position.z = 0.5 * (v1.z + v2.z);
       edge.type = "BOND";
-      edge.name = "".concat(name, "-").concat(matename);
+      edge.group = atom.group;
+      edge.name = "".concat(atom.name, "-").concat(matename);
       return edge;
     }
   }, {
@@ -36540,14 +36472,14 @@ function () {
 
       var v2 = _construct(_three.default.Vector3, _toConsumableArray(this.center_position()));
 
-      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].type]];
+      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
 
-      var c1 = this._cylinder(v1, v2, color, 0.06, v1.name, this.pair[1].name, cone);
+      var c1 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[1].name, cone);
 
       v1 = this.pair[1];
-      color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].type]];
+      color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
 
-      var c2 = this._cylinder(v1, v2, color, 0.06, v1.name, this.pair[0].name, cone);
+      var c2 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[0].name, cone);
 
       c1.mate = c2;
       c2.mate = c1;
@@ -36629,6 +36561,9 @@ function () {
   }, {
     key: "wrapupGLMesh",
     value: function wrapupGLMesh(obj) {
+      var _ref2 = [this.pair[0].molecule, this.pair[1].chain];
+      obj.molecule = _ref2[0];
+      obj.chain = _ref2[1];
       obj.name = "".concat(this.pair[0].name, "-").concat(this.pair[1].name);
       obj.type = "BOND";
       obj.atoms = this.pair;
@@ -36663,7 +36598,96 @@ Bond.bondto = function (afrom, ato) {
 
   return length <= Bond.BOND_TYPE[key] ? true : false;
 };
-},{"three":"node_modules/three/three.js"}],"model.js":[function(require,module,exports) {
+},{"three":"node_modules/three/three.js"}],"node_modules/parse-pdb/index.js":[function(require,module,exports) {
+const ATOM_NAME = 'ATOM  ';
+const RESIDUE_NAME = 'SEQRES';
+
+/**
+ * Parses the given PDB string into json
+ * @param {String} pdb
+ * @returns {Object}
+ */
+module.exports = function parsePdb(pdb) {
+  const pdbLines = pdb.split('\n');
+  const atoms = [];
+  const seqRes = []; // raw SEQRES entry data
+  let residues = []; // individual residue data parsed from SEQRES
+  const chains = new Map(); // individual rchaindata parsed from SEQRES
+
+  // Iterate each line looking for atoms
+  pdbLines.forEach((pdbLine) => {
+    if (pdbLine.substr(0, 6) === ATOM_NAME) {
+      // http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+      atoms.push({
+        serial: parseInt(pdbLine.substring(6, 11)),
+        name: pdbLine.substring(12, 16).trim(),
+        altLoc: pdbLine.substring(16, 17).trim(),
+        resName: pdbLine.substring(17, 20).trim(),
+        chainID: pdbLine.substring(21, 22).trim(),
+        resSeq: parseInt(pdbLine.substring(22, 26)),
+        iCode: pdbLine.substring(26, 27).trim(),
+        x: parseFloat(pdbLine.substring(30, 38)),
+        y: parseFloat(pdbLine.substring(38, 46)),
+        z: parseFloat(pdbLine.substring(46, 54)),
+        occupancy: parseFloat(pdbLine.substring(54, 60)),
+        tempFactor: parseFloat(pdbLine.substring(60, 66)),
+        element: pdbLine.substring(76, 78).trim(),
+        charge: pdbLine.substring(78, 80).trim(),
+      });
+    } else if (pdbLine.substr(0, 6) === RESIDUE_NAME) {
+      // http://www.wwpdb.org/documentation/file-format-content/format33/sect3.html#SEQRES
+      const seqResEntry = {
+        serNum: parseInt(pdbLine.substring(7, 10)),
+        chainID: pdbLine.substring(11, 12).trim(),
+        numRes: parseInt(pdbLine.substring(13, 17)),
+        resNames: pdbLine.substring(19, 70).trim().split(' '),
+      };
+      seqRes.push(seqResEntry);
+
+      residues = residues.concat(seqResEntry.resNames.map(resName => ({
+        id: residues.length,
+        serNum: seqResEntry.serNum,
+        chainID: seqResEntry.chainID,
+        resName,
+      })));
+
+      if (!chains.get(seqResEntry.chainID)) {
+        chains.set(seqResEntry.chainID, {
+          id: chains.size,
+          chainID: seqResEntry.chainID,
+          // No need to save numRes, can just do chain.residues.length
+        });
+      }
+    }
+  });
+
+  // Add residues to chains
+  chains.forEach((chain) => {
+    chain.residues = residues.filter((residue) =>
+      residue.chainID === chain.chainID,
+    );
+  });
+
+  // Add atoms to residues
+  residues.forEach((residue) => {
+    residue.atoms = atoms.filter((atom) =>
+      atom.chainID === residue.chainID && atom.resSeq === residue.serNum,
+    );
+  });
+
+  return {
+    // Raw data from pdb
+    atoms,
+    seqRes,
+    // Derived
+    residues, // Array of residue objects
+    chains, // Map of chain objects keyed on chainID
+  };
+}
+
+},{}],"node_modules/parcel-bundler/src/builtins/_empty.js":[function(require,module,exports) {
+
+},{}],"model.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -36679,6 +36703,11 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+var parsePdb = require('parse-pdb');
+
+var _require = require('fs'),
+    readFileSync = _require.readFileSync;
+
 var MModel =
 /*#__PURE__*/
 function () {
@@ -36693,31 +36722,35 @@ function () {
   _createClass(MModel, [{
     key: "loadMol",
     value: function loadMol(datastr) {
-      var datatype = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "pdb";
-      var mname = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "Mol";
-
-      while (mname in this.mol) {
-        mname += "_";
-      }
-
-      if (datatype.toLowerCase() == "pdb") {
-        this.status = this._pdbToMol(datastr, mname);
-      }
-    }
-  }, {
-    key: "_pdbToMol",
-    value: function _pdbToMol(datastr, mname) {
       var _this = this;
 
-      var atoms = [];
-      datastr.split("\n").forEach(function (line) {
-        var atom = new _molbase.Atom(line, mname);
+      var datatype = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "pdb";
+      var mname = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "Mol";
+      var acnt = 0;
 
-        if (atom.OK) {
-          _this._addobj(atom);
+      if (datatype.toLowerCase() == "pdb") {
+        var mjson = parsePdb(datastr);
+        console.log(mjson);
+
+        if (mjson.atoms.length > 0) {
+          while (mname in this.mol) {
+            mname += "_";
+          }
+
+          mjson.atoms.forEach(function (a) {
+            a.molecule = mname;
+            var atom = new _molbase.Atom(a);
+
+            if (atom.OK) {
+              _this._addobj(atom);
+
+              acnt++;
+            }
+          });
         }
-      });
-      return true;
+      }
+
+      return acnt > 0;
     }
   }, {
     key: "_addobj",
@@ -36726,15 +36759,15 @@ function () {
         this.mol[atom.molecule] = {};
       }
 
-      if (!(atom.chain in this.mol[atom.molecule])) {
-        this.mol[atom.molecule][atom.chain] = {};
+      if (!(atom.chainID in this.mol[atom.molecule])) {
+        this.mol[atom.molecule][atom.chainID] = {};
       }
 
-      if (!(atom.group in this.mol[atom.molecule][atom.chain])) {
-        this.mol[atom.molecule][atom.chain][atom.group] = [];
+      if (!(atom.resName in this.mol[atom.molecule][atom.chainID])) {
+        this.mol[atom.molecule][atom.chainID][atom.resName] = [];
       }
 
-      this.mol[atom.molecule][atom.chain][atom.group].push(atom);
+      this.mol[atom.molecule][atom.chainID][atom.resName].push(atom);
     }
   }, {
     key: "get_gl_objects",
@@ -36929,7 +36962,7 @@ function () {
 
 var _default = MModel;
 exports.default = _default;
-},{"./js/molbase":"js/molbase.js"}],"js/mouse.js":[function(require,module,exports) {
+},{"./js/molbase":"js/molbase.js","parse-pdb":"node_modules/parse-pdb/index.js","fs":"node_modules/parcel-bundler/src/builtins/_empty.js"}],"js/mouse.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -37202,8 +37235,11 @@ function () {
       } // console.log(`loadMol : ${mname}`)
 
 
-      this.model.loadMol(dstr, dtype, mname);
-      this.reloadModel(mname, mtype);
+      var ok = this.model.loadMol(dstr, dtype, mname);
+
+      if (ok) {
+        this.reloadModel(mname, mtype);
+      }
     }
   }, {
     key: "reloadModel",
@@ -37340,7 +37376,8 @@ function () {
         // debug - change to random color for all hits
         var color = this.random_color();
         intersects.forEach(function (o) {
-          console.log("selected ".concat(o.object.name)); // o.object.material.color.set(color);
+          var mesh = o.object;
+          console.log("selected ".concat(mesh.type, "-").concat(mesh.molecule, ":").concat(mesh.chain, ":").concat(mesh.group, ":").concat(mesh.name)); // o.object.material.color.set(color);
           // if (o.object.type == "BOND"){
           //     o.object.mate.material.color.set(color);
           // }
@@ -37514,6 +37551,10 @@ var GL = null; // when DOM is ready ...
 $(function () {
   $("#tabs").tabs().show();
   GL = new _mygl.default("glview"); // GL.loadMol($("#pdb").html());
+
+  if ("development" === 'development') {
+    window.GL = GL;
+  }
 });
 
 function do_model() {
@@ -37522,6 +37563,11 @@ function do_model() {
   if (GL.model) {
     GL.reloadModel("MOL1", model);
   }
+}
+
+function do_demo1() {
+  console.log('demo');
+  GL.loadMol($("#demo1_data").html().trim(), "pdb", "MOL1", $("#model_select").val());
 }
 
 function handleFileSelect(evt) {
@@ -37542,8 +37588,9 @@ function handleFileSelect(evt) {
   }
 }
 
-if ("development" === 'development') window.GL = GL;
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
+document.getElementById('model_select').addEventListener('change', do_model);
+document.getElementById("demo1").addEventListener('click', do_demo1);
 },{"./OrbitControls":"js/OrbitControls.js","../mygl2":"mygl2.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -37572,7 +37619,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56154" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61092" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

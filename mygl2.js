@@ -149,8 +149,12 @@ class MyGL2{
             this.model = new MModel();
         }
         // console.log(`loadMol : ${mname}`)
-        this.model.loadMol(dstr, dtype, mname)
-        this.reloadModel(mname, mtype);
+
+        const ok = this.model.loadMol(dstr, dtype, mname);
+        if (ok){
+            this.reloadModel(mname, mtype);
+        }
+       
     }
 
     reloadModel(mname, model="CPK"){
@@ -248,7 +252,8 @@ class MyGL2{
             // debug - change to random color for all hits
             let color = this.random_color();
             intersects.forEach( (o) => {
-                console.log(`selected ${o.object.name}`);
+                const mesh = o.object;
+                console.log(`selected ${mesh.type}-${mesh.molecule}:${mesh.chain}:${mesh.group}:${mesh.name}`);
                 // o.object.material.color.set(color);
                 // if (o.object.type == "BOND"){
                 //     o.object.mate.material.color.set(color);
