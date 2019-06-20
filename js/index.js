@@ -25,36 +25,63 @@ $( function() {
 } );
 
 
-function do_model(){
+function change_display_model(){
 	let model = $("#model_select").val();
 	if (GL.model){
-		GL.reloadModel("MOL1", model);
+		GL.reloadModel($("#molecule").val(), model);
 	}
 }
 
-function do_demo1(){
+function load_demo_molecule(){
 	console.log('demo')
-	GL.loadMol($("#demo1_data").html().trim(), "pdb", "MOL1", $("#model_select").val())
+	GL.loadMol($("#demo1_data").html().trim(), "pdb", "guanosine", $("#model_select").val(), loadedMoleculeName);
 }
 
+//Retrieve the first (and only!) File from the FileList object
 function handleFileSelect(evt) {
-		  		//Retrieve the first (and only!) File from the FileList object
     var f = evt.target.files[0]; 
 
-
     if (f) {
-      	var r = new FileReader();
-      	r.onload = function(e) { 
-	      	var contents = e.target.result;
-	      	GL.loadMol(contents, "pdb", "MOL1", $("#model_select").val())
-	      	// console.log(contents) 
+      	let r = new FileReader();
+      	r.onload = (e) => { 
+	      	let contents = e.target.result;
+	      	let toks = f.name.split('.')
+	      	let ftype = toks[toks.length-1].toLowerCase();
+	      	if (["xyz", "pdb"].indexOf(ftype) > -1 ) {
+	      		let mname = f.name.substr(0, f.name.length - 4);
+	      		GL.loadMol(contents, ftype, mname, $("#model_select").val(), loadedMoleculeName)
+	      	} else {
+	      		alert(`Unsupported module file type : ${f.name}`)
+	      	}
       	}
+      	/*
+      		f.name -> file name string
+      		f.size 
+      	*/
+      	console.log(f)
       	r.readAsText(f);
     } else { 
       	alert("Failed to load file");
     } 
 }
 
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-document.getElementById('model_select').addEventListener('change', do_model);
-document.getElementById("demo1").addEventListener('click', do_demo1);
+function loadedMoleculeName(mname){
+	if (mname){
+		// remove empty options
+		$("#molecule option").filter(function() {
+			    return !this.value || $.trim(this.value).length == 0 || $.trim(this.text).length == 0;
+			}).remove();
+
+		let opt = document.createElement("option");
+		opt.innerHTML = mname;
+		document.getElementById("molecule").insertBefore(opt, document.getElementById("molecule").firstChild);
+		$("#molecule").show();
+		$("#molecule")[0].selectedIndex = 0; 	// make the 1st option is current
+	}
+}
+
+document.getElementById('file').addEventListener('change', handleFileSelect, false);
+document.getElementById('model_select').addEventListener('change', change_display_model);
+document.getElementById("demo1").addEventListener('click', load_demo_molecule);
+document.getElementById('molecule').addEventListener('change', change_display_model);
+

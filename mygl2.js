@@ -144,14 +144,15 @@ class MyGL2{
         render();
     }
 
-    loadMol(dstr, dtype, mname, mtype){
+    loadMol(dstr, dtype, mname, mtype, callback){
         if (!this.model){
             this.model = new MModel();
         }
         // console.log(`loadMol : ${mname}`)
 
-        const ok = this.model.loadMol(dstr, dtype, mname);
-        if (ok){
+        mname = this.model.loadMol(dstr, dtype, mname);
+        if (mname){
+            callback(mname);
             this.reloadModel(mname, mtype);
         }
        

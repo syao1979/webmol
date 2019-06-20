@@ -93,17 +93,24 @@ ATOM    646 2H2    G A  67       2.985  -6.042   9.223  1.00  0.00      	 H
     		<tr>
     			<td style="width: 50px" nowrap> Open : </td>
     			<td style="width: 180px" nowrap>
-    				<input type="file" id="files" name="files[]" multiple /><output id="list"></output>
+    				<input type="file" id="file" name="file" /><output id="list"></output>
     			</td>
     			<td style="width: 60px" nowrap> Model : </td>
     			<td style="font-family: monospace; font-size: 10px; text-align: left"> 
     				<select id="model_select">
-	    				<option>CPK</option>
-	    				<option>BallStick</option>
-	    				<option>BallStick2</option>
-	    				<option>Stick</option>
 	    				<option>Wire</option>
 	    				<option>Wire2</option>
+	    				<option>Stick</option>
+	    				<option>BallStick</option>
+	    				<option>BallStick2</option>
+	    				<option>CPK</option>
+	    			</select>
+	    		</td>
+	    		<td style="width: 50px"></td>
+	    		<td style="width: 80px" nowrap> Molecule : </td>
+	    		<td>
+	    			<select id="molecule" style="display: none">
+	    				<option></option>
 	    			</select>
 	    		</td>
 	    		<td style="width: auto"></td>

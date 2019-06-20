@@ -29,8 +29,8 @@ class MModel{
 				})
 	        }
 		}
-		return (acnt > 0);
 		
+		return acnt > 0 ? mname : null;
 	}
 
 
