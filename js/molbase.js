@@ -5,13 +5,6 @@ class Atom extends THREE.Vector3 {
 	name = "C";		// name, C2 etc
 	OK = false	
 
-	// constructor(sline, molName="MolName", format="pdb"){
-	// 	super();
-	// 	if (format == "pdb"){
-	// 		this.parsePDB(sline, molName);
-	// 	}
-	// }
-
 	constructor(data){
 		super();
 
@@ -25,12 +18,9 @@ class Atom extends THREE.Vector3 {
 		this.OK = (data.molecule && data.name && data.resName && data.chainID && data.element);
 	}
 
-
-	ball(quality=36, scale=1.0){
+	ball(quality="NORMAL", scale=1.0){
 		// Set up the mesh lets
-		const SEGMENTS = quality;
-		const RINGS = quality;
-
+		// console.log(`ball ${quality}`)
 		let size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
 		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.element]];
 
@@ -41,12 +31,14 @@ class Atom extends THREE.Vector3 {
 					transparent : true
 				}
 			);
-			//new THREE.MeshLambertMaterial( { color: cfg.color, wireframe: false });
 		material.transparent = true;
 
-		// let objGeometry = new THREE.SphereGeometry(cpk.size, SEGMENTS, RINGS);	// can be singular and use clone
 		size = scale > 0 ? size * scale : 0.0602;
-	  	const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, SEGMENTS, RINGS), material);
+		// console.dir(Atom.MODEL)
+	  	const mesh = new THREE.Mesh(Atom.MODEL[quality], material);
+	  	mesh.scale.x = size;
+	  	mesh.scale.y = size;
+	  	mesh.scale.z = size;
 	  	mesh.position.set(...this.toArray());
 
 	  	return this.wrapupGLMesh(mesh);
@@ -67,17 +59,24 @@ class Atom extends THREE.Vector3 {
 	atomicNum(){
 		return Atom.ATOM_NUMBER[this.element];
 	}
+}
 
+Atom.MODEL = {
+	SUPER_HIGH : new THREE.SphereGeometry(1, 64, 64),
+	HIGH : new THREE.SphereGeometry(1, 32, 32),
+	NORMAL : new THREE.SphereGeometry(1, 24, 24),
+	LOW : new THREE.SphereGeometry(1, 16, 16),
+	SUPER_LOW : new THREE.SphereGeometry(1, 8, 8),
 }
 
 Atom.ATOM_CPK = {
-		H : { color: 0xffff, size : 1 },
-		C : { color: 0x999999, size : 1.5 },
-		O : { color: 0xff0000, size : 1.35},
-		N : { color: 0x0000, size : 1.25 },
-		P : { color: 0xffff00, size : 1.7 },
-		S : { color: 0xffff00, size : 1.7}
-	}
+	H : { color: 0xffff, size : 1 },
+	C : { color: 0x999999, size : 1.5 },
+	O : { color: 0xff0000, size : 1.35},
+	N : { color: 0x0000, size : 1.25 },
+	P : { color: 0xffff00, size : 1.7 },
+	S : { color: 0xffff00, size : 1.7}
+}
 
 Atom.ATOM_NUMBER = {
 	H : 1,
@@ -297,20 +296,10 @@ class Bond{
 		return this.wrapupGLMesh(line);
 	}
 
-	_cylinder(v1, v2, color, size, atom, matename, cone){
-	    let direction = new THREE.Vector3().subVectors(v1, v2);
-	    let orientation = new THREE.Matrix4();
-	    orientation.lookAt(v1, v2, new THREE.Object3D().up);
-	    let rotm = new THREE.Matrix4();
-	    rotm.set(
-	                1, 0, 0, 0,
-	                0, 0, 1, 0,
-	                0, -1, 0, 0,
-	                0, 0, 0, 1
-	              )
-	    orientation.multiply(rotm);
-	    let edgeGeometry = cone ? new THREE.CylinderGeometry(size*1.5, 0, direction.length(), 32, 1) :
-	    								new THREE.CylinderGeometry(size, size, direction.length(), 32, 1);
+	_cylinder2(v1, v2, color, size, atom, matename, cone, length, orientation){
+	    
+	    let edgeGeometry = cone ? new THREE.CylinderGeometry(size*1.5, 0, length, 32, 1) :
+	    								new THREE.CylinderGeometry(size, size, length, 32, 1);
 	    let material = new THREE.MeshPhongMaterial({color: color});
 	    let edge = new THREE.Mesh(edgeGeometry, material);
 	    edge.applyMatrix(orientation);
@@ -326,15 +315,97 @@ class Bond{
 	    return edge;
 	}
 
-	cylinder(cone=false){
+	cylinder2(cone=false){
+		let direction = new THREE.Vector3().subVectors(this.pair[0], this.pair[1]);
+	    let rotm = new THREE.Matrix4();
+	    rotm.set(
+	                1, 0, 0, 0,
+	                0, 0, 1, 0,
+	                0, -1, 0, 0,
+	                0, 0, 0, 1
+	              )
+
+	    // first half from A to B
+	    let orientation = new THREE.Matrix4();
+	    orientation.lookAt(this.pair[0], this.pair[1], new THREE.Object3D().up);
+	    orientation.multiply(rotm);
+
 		let v1 = this.pair[0];
 		let v2 = new THREE.Vector3(...this.center_position());
+		let vec = new THREE.Vector3().subVectors(v1, v2)
 		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
-		let c1 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[1].name, cone );
+		let c1 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[1].name, cone, vec.length(), orientation );
+
+		// second half from B to A
+		orientation = new THREE.Matrix4();
+	    orientation.lookAt(this.pair[1], this.pair[0], new THREE.Object3D().up);
+	    orientation.multiply(rotm);
 
 		v1 = this.pair[1];
 		color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
-		let c2 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[0].name, cone );
+		vec = new THREE.Vector3().subVectors(v1, v2)
+		let c2 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[0].name, cone, vec.length(), orientation );
+
+		c1.mate = c2;
+		c2.mate = c1;
+		c1 = this.wrapupGLMesh(c1);
+		c2 = this.wrapupGLMesh(c2);
+		return [c1, c2];
+	}
+
+	_cylinder(v1, v2, color, atom, matename, length, orientation, edgeGeometry){
+	    
+	    let material = new THREE.MeshPhongMaterial({color: color});
+	    let edge = new THREE.Mesh(edgeGeometry, material);
+	    edge.applyMatrix(orientation);
+	    // position based on midpoints - there may be a better solution than this
+	    edge.scale.y = length;
+	    edge.position.x = 0.5 * (v1.x + v2.x );
+	   	edge.position.y = 0.5 * (v1.y + v2.y );
+	   	edge.position.z = 0.5 * (v1.z + v2.z );
+	   	
+	   	edge.type = "BOND";
+	   	edge.group = atom.group;
+	   	edge.name = `${atom.name}-${matename}`;
+
+	    return edge;
+	}
+
+	cylinder(cone=false, quality="HIGH"){
+		let direction = new THREE.Vector3().subVectors(this.pair[0], this.pair[1]);
+	    let rotm = new THREE.Matrix4();
+	    rotm.set(
+	                1, 0, 0, 0,
+	                0, 0, 1, 0,
+	                0, -1, 0, 0,
+	                0, 0, 0, 1
+	              )
+
+	    // reuse the cylinderGeo
+	    const geotype = cone ? "CONE" : "STICK";
+	    const geo = Bond.MODEL[geotype][quality]
+
+
+	    // first half from A to B
+	    let orientation = new THREE.Matrix4();
+	    orientation.lookAt(this.pair[0], this.pair[1], new THREE.Object3D().up);
+	    orientation.multiply(rotm);
+
+		let v1 = this.pair[0];
+		let v2 = new THREE.Vector3(...this.center_position());
+		let vec = new THREE.Vector3().subVectors(v1, v2)
+		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
+		let c1 = this._cylinder( v1, v2, color, v1, this.pair[1].name, vec.length(), orientation, geo );
+
+		// second half from B to A
+		orientation = new THREE.Matrix4();
+	    orientation.lookAt(this.pair[1], this.pair[0], new THREE.Object3D().up);
+	    orientation.multiply(rotm);
+
+		v1 = this.pair[1];
+		color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
+		vec = new THREE.Vector3().subVectors(v1, v2)
+		let c2 = this._cylinder( v1, v2, color, v1, this.pair[0].name, vec.length(), orientation, geo );
 
 		c1.mate = c2;
 		c2.mate = c1;
@@ -438,6 +509,27 @@ Bond.BOND_TYPE = {
 	"6_8" : 1.5,
 	"7_7" : 1.5,
 	"8_15" : 1.7,
+}
+
+Bond.STICK_SIZE = 0.06;
+
+Bond.MODEL = {
+	CONE : {
+		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, false),
+		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, false),
+		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, false),
+		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, false),
+		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, false),
+	},
+	STICK : {
+		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, false),
+		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, false),
+		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, false),
+		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, false),
+		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, false),
+	},
+	LINE : new THREE.BufferGeometry()
+
 }
 
 Bond.bondto = (afrom, ato) => {

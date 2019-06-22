@@ -66,11 +66,11 @@ class MModel{
 		model = model.toLowerCase()
 		// console.log(`get_gl_objects : ${model}`)
 		if ( model == "cpk" || model.indexOf("stick") > -1 ) {
-			let [qual, size] = [36, 1.0];
+			let [qual, size] = ["HIGH", 1.0];
 			if ( model == "ballstick" || model == "ballstick2" ){
-				[qual, size] = [24, 0.15];
+				[qual, size] = ["NORMAL", 0.15];
 			} else if ( model == "stick" ){
-				[qual, size] = [24, -1];
+				[qual, size] = ["NORMAL", -1];
 			}
 
 			atomlist.forEach( (o) => {
@@ -106,31 +106,6 @@ class MModel{
 				}
 			}
 		}
-
-
-			// let geometry, meterial;
-
-			// geometry = new THREE.SphereGeometry(0.5, 10, 10);
-			// 	// let geometry = new THREE.BoxGeometry(1, 1, 1);
-			// meterial = new THREE.MeshLambertMaterial(
-			// 	{
-			// 		color: 0xFF00ff,
-			// 	});
-			// meterial.opacity = 0.5;
-			// var m = new THREE.Mesh(geometry, meterial);
-			// // alist.push(m)
-
-			// geometry = new THREE.SphereGeometry(1, 10, 10);
-			// // let geometry = new THREE.BoxGeometry(1, 1, 1);
-			// meterial = new THREE.MeshLambertMaterial(
-			// 	{
-			// 		color: 0xFFCC00,
-			// 		transparent : true,
-			// 		opacity: 0.8
-			// 	});
-
-			// var meshobj = new THREE.Mesh(geometry, meterial);
-			// alist.push(meshobj)
 
 		return alist;
 	}

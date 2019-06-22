@@ -36062,12 +36062,6 @@ function (_THREE$Vector) {
 
   // Atom type, H, C, O etc
   // name, C2 etc
-  // constructor(sline, molName="MolName", format="pdb"){
-  // 	super();
-  // 	if (format == "pdb"){
-  // 		this.parsePDB(sline, molName);
-  // 	}
-  // }
   function Atom(data) {
     var _this;
 
@@ -36101,23 +36095,24 @@ function (_THREE$Vector) {
     value: function ball() {
       var _mesh$position;
 
-      var quality = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 36;
+      var quality = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "NORMAL";
       var scale = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
       // Set up the mesh lets
-      var SEGMENTS = quality;
-      var RINGS = quality;
+      // console.log(`ball ${quality}`)
       var size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
       var color = Atom.COLOR[Atom.ATOM_NUMBER[this.element]];
       var material = new _three.default.MeshLambertMaterial({
         color: color,
         opacity: 1.0,
         transparent: true
-      }); //new THREE.MeshLambertMaterial( { color: cfg.color, wireframe: false });
+      });
+      material.transparent = true;
+      size = scale > 0 ? size * scale : 0.0602; // console.dir(Atom.MODEL)
 
-      material.transparent = true; // let objGeometry = new THREE.SphereGeometry(cpk.size, SEGMENTS, RINGS);	// can be singular and use clone
-
-      size = scale > 0 ? size * scale : 0.0602;
-      var mesh = new _three.default.Mesh(new _three.default.SphereGeometry(size, SEGMENTS, RINGS), material);
+      var mesh = new _three.default.Mesh(Atom.MODEL[quality], material);
+      mesh.scale.x = size;
+      mesh.scale.y = size;
+      mesh.scale.z = size;
 
       (_mesh$position = mesh.position).set.apply(_mesh$position, _toConsumableArray(this.toArray()));
 
@@ -36152,6 +36147,13 @@ function (_THREE$Vector) {
 }(_three.default.Vector3);
 
 exports.Atom = Atom;
+Atom.MODEL = {
+  SUPER_HIGH: new _three.default.SphereGeometry(1, 64, 64),
+  HIGH: new _three.default.SphereGeometry(1, 32, 32),
+  NORMAL: new _three.default.SphereGeometry(1, 24, 24),
+  LOW: new _three.default.SphereGeometry(1, 16, 16),
+  SUPER_LOW: new _three.default.SphereGeometry(1, 8, 8)
+};
 Atom.ATOM_CPK = {
   H: {
     color: 0xffff,
@@ -36441,15 +36443,9 @@ function () {
       return this.wrapupGLMesh(line);
     }
   }, {
-    key: "_cylinder",
-    value: function _cylinder(v1, v2, color, size, atom, matename, cone) {
-      var direction = new _three.default.Vector3().subVectors(v1, v2);
-      var orientation = new _three.default.Matrix4();
-      orientation.lookAt(v1, v2, new _three.default.Object3D().up);
-      var rotm = new _three.default.Matrix4();
-      rotm.set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);
-      orientation.multiply(rotm);
-      var edgeGeometry = cone ? new _three.default.CylinderGeometry(size * 1.5, 0, direction.length(), 32, 1) : new _three.default.CylinderGeometry(size, size, direction.length(), 32, 1);
+    key: "_cylinder2",
+    value: function _cylinder2(v1, v2, color, size, atom, matename, cone, length, orientation) {
+      var edgeGeometry = cone ? new _three.default.CylinderGeometry(size * 1.5, 0, length, 32, 1) : new _three.default.CylinderGeometry(size, size, length, 32, 1);
       var material = new _three.default.MeshPhongMaterial({
         color: color
       });
@@ -36465,21 +36461,92 @@ function () {
       return edge;
     }
   }, {
-    key: "cylinder",
-    value: function cylinder() {
+    key: "cylinder2",
+    value: function cylinder2() {
       var cone = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var direction = new _three.default.Vector3().subVectors(this.pair[0], this.pair[1]);
+      var rotm = new _three.default.Matrix4();
+      rotm.set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1); // first half from A to B
+
+      var orientation = new _three.default.Matrix4();
+      orientation.lookAt(this.pair[0], this.pair[1], new _three.default.Object3D().up);
+      orientation.multiply(rotm);
       var v1 = this.pair[0];
 
       var v2 = _construct(_three.default.Vector3, _toConsumableArray(this.center_position()));
 
+      var vec = new _three.default.Vector3().subVectors(v1, v2);
       var color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
 
-      var c1 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[1].name, cone);
+      var c1 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[1].name, cone, vec.length(), orientation); // second half from B to A
 
+
+      orientation = new _three.default.Matrix4();
+      orientation.lookAt(this.pair[1], this.pair[0], new _three.default.Object3D().up);
+      orientation.multiply(rotm);
       v1 = this.pair[1];
       color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
+      vec = new _three.default.Vector3().subVectors(v1, v2);
 
-      var c2 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[0].name, cone);
+      var c2 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[0].name, cone, vec.length(), orientation);
+
+      c1.mate = c2;
+      c2.mate = c1;
+      c1 = this.wrapupGLMesh(c1);
+      c2 = this.wrapupGLMesh(c2);
+      return [c1, c2];
+    }
+  }, {
+    key: "_cylinder",
+    value: function _cylinder(v1, v2, color, atom, matename, length, orientation, edgeGeometry) {
+      var material = new _three.default.MeshPhongMaterial({
+        color: color
+      });
+      var edge = new _three.default.Mesh(edgeGeometry, material);
+      edge.applyMatrix(orientation); // position based on midpoints - there may be a better solution than this
+
+      edge.scale.y = length;
+      edge.position.x = 0.5 * (v1.x + v2.x);
+      edge.position.y = 0.5 * (v1.y + v2.y);
+      edge.position.z = 0.5 * (v1.z + v2.z);
+      edge.type = "BOND";
+      edge.group = atom.group;
+      edge.name = "".concat(atom.name, "-").concat(matename);
+      return edge;
+    }
+  }, {
+    key: "cylinder",
+    value: function cylinder() {
+      var cone = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var quality = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "HIGH";
+      var direction = new _three.default.Vector3().subVectors(this.pair[0], this.pair[1]);
+      var rotm = new _three.default.Matrix4();
+      rotm.set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1); // reuse the cylinderGeo
+
+      var geotype = cone ? "CONE" : "STICK";
+      var geo = Bond.MODEL[geotype][quality]; // first half from A to B
+
+      var orientation = new _three.default.Matrix4();
+      orientation.lookAt(this.pair[0], this.pair[1], new _three.default.Object3D().up);
+      orientation.multiply(rotm);
+      var v1 = this.pair[0];
+
+      var v2 = _construct(_three.default.Vector3, _toConsumableArray(this.center_position()));
+
+      var vec = new _three.default.Vector3().subVectors(v1, v2);
+      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
+
+      var c1 = this._cylinder(v1, v2, color, v1, this.pair[1].name, vec.length(), orientation, geo); // second half from B to A
+
+
+      orientation = new _three.default.Matrix4();
+      orientation.lookAt(this.pair[1], this.pair[0], new _three.default.Object3D().up);
+      orientation.multiply(rotm);
+      v1 = this.pair[1];
+      color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
+      vec = new _three.default.Vector3().subVectors(v1, v2);
+
+      var c2 = this._cylinder(v1, v2, color, v1, this.pair[0].name, vec.length(), orientation, geo);
 
       c1.mate = c2;
       c2.mate = c1;
@@ -36584,6 +36651,24 @@ Bond.BOND_TYPE = {
   "6_8": 1.5,
   "7_7": 1.5,
   "8_15": 1.7
+};
+Bond.STICK_SIZE = 0.06;
+Bond.MODEL = {
+  CONE: {
+    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, false),
+    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, false),
+    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, false),
+    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, false),
+    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, false)
+  },
+  STICK: {
+    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, false),
+    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, false),
+    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, false),
+    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, false),
+    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, false)
+  },
+  LINE: new _three.default.BufferGeometry()
 };
 
 Bond.bondto = function (afrom, ato) {
@@ -36789,14 +36874,14 @@ function () {
       model = model.toLowerCase(); // console.log(`get_gl_objects : ${model}`)
 
       if (model == "cpk" || model.indexOf("stick") > -1) {
-        var qual = 36,
+        var qual = "HIGH",
             size = 1.0;
 
         if (model == "ballstick" || model == "ballstick2") {
-          qual = 24;
+          qual = "NORMAL";
           size = 0.15;
         } else if (model == "stick") {
-          qual = 24;
+          qual = "NORMAL";
           size = -1;
         }
 
@@ -36845,27 +36930,7 @@ function () {
             }
           }
         }
-      } // let geometry, meterial;
-      // geometry = new THREE.SphereGeometry(0.5, 10, 10);
-      // 	// let geometry = new THREE.BoxGeometry(1, 1, 1);
-      // meterial = new THREE.MeshLambertMaterial(
-      // 	{
-      // 		color: 0xFF00ff,
-      // 	});
-      // meterial.opacity = 0.5;
-      // var m = new THREE.Mesh(geometry, meterial);
-      // // alist.push(m)
-      // geometry = new THREE.SphereGeometry(1, 10, 10);
-      // // let geometry = new THREE.BoxGeometry(1, 1, 1);
-      // meterial = new THREE.MeshLambertMaterial(
-      // 	{
-      // 		color: 0xFFCC00,
-      // 		transparent : true,
-      // 		opacity: 0.8
-      // 	});
-      // var meshobj = new THREE.Mesh(geometry, meterial);
-      // alist.push(meshobj)
-
+      }
 
       return alist;
     } //for a given molecule name, retur a list of all atoms
@@ -37649,7 +37714,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57095" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50689" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
