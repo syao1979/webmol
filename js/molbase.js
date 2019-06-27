@@ -18,7 +18,7 @@ class Atom extends THREE.Vector3 {
 		this.OK = (data.molecule && data.name && data.resName && data.chainID && data.element);
 	}
 
-	ball(quality="NORMAL", scale=1.0){
+	ball(quality="NORMAL", scale=1.0, visible=true){
 		// Set up the mesh lets
 		// console.log(`ball ${quality}`)
 		let size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
@@ -40,15 +40,15 @@ class Atom extends THREE.Vector3 {
 	  	mesh.scale.y = size;
 	  	mesh.scale.z = size;
 	  	mesh.position.set(...this.toArray());
+	  	mesh.visible = visible;
 
 	  	return this.wrapupGLMesh(mesh);
 	}
 
 	wrapupGLMesh (obj) {
 		[obj.name, obj.molecule, obj.chain, obj.group] = [this.name, this.molecule, this.chain, this.group];
-		obj.molname = this.molecule;
-		obj.name = this.name;
 		obj.type = "ATOM";
+		obj.data = this;
 		return obj;
 	}
 
@@ -58,6 +58,11 @@ class Atom extends THREE.Vector3 {
 
 	atomicNum(){
 		return Atom.ATOM_NUMBER[this.element];
+	}
+
+	// group name / chain name / molecule name
+	in(level, name){
+		return (this[level] == name);
 	}
 }
 
@@ -293,85 +298,30 @@ class Bond{
 		// line
 		let line = new THREE.Line( geometry, lineMaterial );
 		line.group = this.pair[0].group;
+		line.data = this;
 		return this.wrapupGLMesh(line);
-	}
-
-	_cylinder2(v1, v2, color, size, atom, matename, cone, length, orientation){
-	    
-	    let edgeGeometry = cone ? new THREE.CylinderGeometry(size*1.5, 0, length, 32, 1) :
-	    								new THREE.CylinderGeometry(size, size, length, 32, 1);
-	    let material = new THREE.MeshPhongMaterial({color: color});
-	    let edge = new THREE.Mesh(edgeGeometry, material);
-	    edge.applyMatrix(orientation);
-	    // position based on midpoints - there may be a better solution than this
-	    edge.position.x = 0.5 * (v1.x + v2.x );
-	   	edge.position.y = 0.5 * (v1.y + v2.y );
-	   	edge.position.z = 0.5 * (v1.z + v2.z );
-	   	
-	   	edge.type = "BOND";
-	   	edge.group = atom.group;
-	   	edge.name = `${atom.name}-${matename}`;
-
-	    return edge;
-	}
-
-	cylinder2(cone=false){
-		let direction = new THREE.Vector3().subVectors(this.pair[0], this.pair[1]);
-	    let rotm = new THREE.Matrix4();
-	    rotm.set(
-	                1, 0, 0, 0,
-	                0, 0, 1, 0,
-	                0, -1, 0, 0,
-	                0, 0, 0, 1
-	              )
-
-	    // first half from A to B
-	    let orientation = new THREE.Matrix4();
-	    orientation.lookAt(this.pair[0], this.pair[1], new THREE.Object3D().up);
-	    orientation.multiply(rotm);
-
-		let v1 = this.pair[0];
-		let v2 = new THREE.Vector3(...this.center_position());
-		let vec = new THREE.Vector3().subVectors(v1, v2)
-		let color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
-		let c1 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[1].name, cone, vec.length(), orientation );
-
-		// second half from B to A
-		orientation = new THREE.Matrix4();
-	    orientation.lookAt(this.pair[1], this.pair[0], new THREE.Object3D().up);
-	    orientation.multiply(rotm);
-
-		v1 = this.pair[1];
-		color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
-		vec = new THREE.Vector3().subVectors(v1, v2)
-		let c2 = this._cylinder( v1, v2, color, 0.06, v1, this.pair[0].name, cone, vec.length(), orientation );
-
-		c1.mate = c2;
-		c2.mate = c1;
-		c1 = this.wrapupGLMesh(c1);
-		c2 = this.wrapupGLMesh(c2);
-		return [c1, c2];
 	}
 
 	_cylinder(v1, v2, color, atom, matename, length, orientation, edgeGeometry){
 	    
 	    let material = new THREE.MeshPhongMaterial({color: color});
-	    let edge = new THREE.Mesh(edgeGeometry, material);
-	    edge.applyMatrix(orientation);
+	    let mesh = new THREE.Mesh(edgeGeometry, material);
+	    mesh.applyMatrix(orientation);
 	    // position based on midpoints - there may be a better solution than this
-	    edge.scale.y = length;
-	    edge.position.x = 0.5 * (v1.x + v2.x );
-	   	edge.position.y = 0.5 * (v1.y + v2.y );
-	   	edge.position.z = 0.5 * (v1.z + v2.z );
+	    mesh.scale.y = length;
+	    mesh.position.x = 0.5 * (v1.x + v2.x );
+	   	mesh.position.y = 0.5 * (v1.y + v2.y );
+	   	mesh.position.z = 0.5 * (v1.z + v2.z );
 	   	
-	   	edge.type = "BOND";
-	   	edge.group = atom.group;
-	   	edge.name = `${atom.name}-${matename}`;
+	   	mesh.type = "BOND";
+	   	mesh.group = atom.group;
+	   	mesh.data = this;
+	   	mesh.name = `${atom.name}-${matename}`;
 
-	    return edge;
+	    return mesh;
 	}
 
-	cylinder(cone=false, quality="HIGH"){
+	cylinder(geotype="LINE", quality="HIGH"){
 		let direction = new THREE.Vector3().subVectors(this.pair[0], this.pair[1]);
 	    let rotm = new THREE.Matrix4();
 	    rotm.set(
@@ -382,9 +332,8 @@ class Bond{
 	              )
 
 	    // reuse the cylinderGeo
-	    const geotype = cone ? "CONE" : "STICK";
-	    const geo = Bond.MODEL[geotype][quality]
-
+	    // const geotype = cone ? "CONE" : "STICK";
+	    const geo = Bond.MODEL[geotype][quality];
 
 	    // first half from A to B
 	    let orientation = new THREE.Matrix4();
@@ -486,6 +435,11 @@ class Bond{
 		return this.pair[0].distanceTo(this.pair[1]);
 	}
 
+	// levelname : group name / chain name / molecule name; true if both atom are in
+	in(level, name){
+		return ( this.pair[0].in(level, name) && this.pair[1].in(level, name) );
+	}
+
 	type(afrom, ato){
 		let anums = this.pair.map( (a) => a.atomicNum() ).sort();
 		let dist = this.length();
@@ -512,23 +466,31 @@ Bond.BOND_TYPE = {
 }
 
 Bond.STICK_SIZE = 0.06;
+Bond.LINE_SIZE = 0.06;
+Bond.LINE_FACES = 6;
 
 Bond.MODEL = {
 	CONE : {
-		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, false),
-		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, false),
-		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, false),
-		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, false),
-		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, false),
+		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, true),	//open end 
+		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, true),
+		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, true),
+		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, true),
+		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, true),
 	},
 	STICK : {
-		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, false),
-		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, false),
-		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, false),
-		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, false),
-		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, false),
+		SUPER_HIGH : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, true),
+		HIGH       : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, true),
+		NORMAL     : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, true),
+		LOW        : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, true),
+		SUPER_LOW  : new THREE.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, true),
 	},
-	LINE : new THREE.BufferGeometry()
+	LINE : {
+		SUPER_HIGH : new THREE.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+		HIGH 	   : new THREE.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+		NORMAL 	   : new THREE.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+		LOW        : new THREE.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+		SUPER_LOW  : new THREE.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+	}
 
 }
 

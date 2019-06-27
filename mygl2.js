@@ -33,6 +33,14 @@ class MyGL2{
     objects = null; 
     atomHighlight = null;
 
+    meshlist = [];
+    pick_cnt = 0; // # times the same object is clicked
+    pick_level = {
+        2 : "group",
+        3 : "chain",
+        4 : "molecule"
+    }
+
     constructor(viewid) {
 
         // Create main scene
@@ -224,7 +232,7 @@ class MyGL2{
         // console.log('onDocumentMouseDown')
         event.preventDefault();
 
-        this.toggle_highlight(false);
+        // this.toggle_highlight();
 
         let [ex, ey] = this.mouse_relative_position(event);
         let mouseX = (ex / this.width) * 2 - 1;
@@ -252,67 +260,136 @@ class MyGL2{
 
             // debug - change to random color for all hits
             let color = this.random_color();
+            let atom = null;
+            let bond = null;
             intersects.forEach( (o) => {
                 const mesh = o.object;
-                console.log(`selected ${mesh.type}-${mesh.molecule}:${mesh.chain}:${mesh.group}:${mesh.name}`);
-                // o.object.material.color.set(color);
-                // if (o.object.type == "BOND"){
-                //     o.object.mate.material.color.set(color);
-                // }
+                
+                if (!atom && o.object.type == "ATOM"){
+                    atom = o.object;
+                }
+                if (!bond && o.object.type == "BOND"){
+                    bond = o.object;
+                }
             })
 
-            if ( intersects[0].object.type == "ATOM" ){ // since bond to atom is "under", [0] will always be the atom
+            const hitObj = atom ? atom : bond;
 
+            if ( hitObj ){ // since bond to atom is "under", [0] will always be the atom
+                console.log(`selected ${hitObj.type}-${hitObj.molecule}:${hitObj.chain}:${hitObj.group}:${hitObj.name}`);
                 //  the controls
                 this.controls.enabled = false;
-
-
-                // Set the selection - first intersected object
-                // if (this.atomHighlight){
-                //     this.scene.remote(this.atomHighlight);
-                //     this.atomHighlight.geometry.dispose();
-                //     this.atomHighlight.material.dispose();
-                //     this.atomHighlight = null;
-                // }
-                this.selection = intersects[0].object;
-                this.toggle_highlight();
-
-                // this.atomHighlight = this.selection.clone();
-                // this.atomHighlight.wireframe = true;
-                // this.atomHighlight.opacity = 0.5;
-                // let sf = 1.25;  // scale factor
-                // this.atomHighlight.scale.x *= sf;
-                // this.atomHighlight.scale.y *= sf;
-                // this.atomHighlight.scale.z *= sf;
-                // this.atomHighlight.material.color.set(0x800080)  // purple
-                // this.scene.add(this.atomHighlight)
-
-
-                // this.selection.material.color.set(this.random_color());
-                // console.dir(this.selection)
 
                 // Calculate the offset
                 let tmp = this.raycaster.intersectObject(this.plane);
                 this.offset.copy(tmp[0].point).sub(this.plane.position);
+
+                this.toggle_highlight(hitObj);
             }
         }
     }
 
-    toggle_highlight(flag=true){
-        if (this.selection){
-            if(flag){
-                this.selection.material.transparent = true;
-                this.selection.material.opacity = 0.85;
-                // this.selection.material.wireframe = true;
-            } else {
-                this.selection.material.transparent = false;
-                this.selection.material.opacity = 1.0;
-                // this.selection.material.wireframe = false;
+    toggle_highlight(hitObj){
+        if (hitObj == undefined){
+            return;
+        }
+
+        // const hasSelectedBefore = (hitObj && hitObj == this.selection) ? true : false;
+        const hasSelectedBefore = (this.meshlist.indexOf(hitObj) > -1);
+        if (!hasSelectedBefore){
+            this.pick_cnt = 1;
+            if (this.selection){
+                console.log("reset selected")
+                this.update_selected(true);
                 this.selection = null;
+                this.meshlist = [];
+            }  
+            this.selection = hitObj;
+            this.meshlist.push(hitObj);
+            this.update_selected();
+            
+            // this.selection.material.transparent = false;
+            // this.selection.material.opacity = 1.0;
+            // this.selection.material.color = this.selection.ori_color;
+            // // this.selection.material.wireframe = false;
+            // this.selection = null; 
+            // 
+        } else {
+
+            this.pick_cnt++;
+            // console.log(`call collect_mesh for level ${this.pick_level[this.pick_cnt]}`)
+            const alist = this.collect_mesh(hitObj);
+            console.log(`old len=${this.meshlist.length}; new len=${alist.length}`)
+            if (alist.length > this.meshlist.length){
+                this.meshlist = alist;
+                this.update_selected();
+            } else if (alist.length == this.meshlist.length){   // has to be !
+                this.update_selected(true);  // reset
+            } else {
+                // error !
             }
-              
+            // select the next level
+            
+                // this.selection = hitObj;
+                // this.meshlist.push(hitObj);
+                // this.update_selected();
+            
+        }
+
+
+
+
+        // if (highlighSelected){
+        //     this.selection = hitObj;
+        //     this.selection.material.transparent = true;
+        //     this.selection.material.opacity = 0.85;
+        //     this.selection.ori_color = this.selection.material.color.clone();
+        //     this.selection.material.color.setHex(0xffff00);
+        // }
+    }
+
+    collect_mesh(mesh){
+        const level = this.pick_level[this.pick_cnt];
+        let alist = []
+
+        // DEBUG: 
+        this.mesh = mesh;
+        console.log(`${level}; mesh.level=${mesh.data[level]}`)
+
+        if (level){
+            const lname = mesh[level];
+            this.scene.children.forEach( (o) => {               
+                if (o.type == "ATOM" || o.type == "BOND"){
+                    if ( o.data.in(level, lname) ){
+                        alist.push(o)
+                    }
+                }
+            })
+        }
+        return alist;
+    }
+
+    update_selected(restore=false){
+        if (restore){
+            this.meshlist.forEach( (m) => {
+                m.material.transparent = false;
+                m.material.opacity = 1.0;
+                m.material.color = m.ori_color.clone();
+            })
+            this.selection = null;
+            this.meshlist = [];
+        } else {
+            this.meshlist.forEach( (m) => {
+                m.material.transparent = true;
+                m.material.opacity = 0.85;
+                if ( m.ori_color == undefined){
+                    m.ori_color = m.material.color.clone();
+                }
+                m.material.color.setHex(0xffff00);
+            })
         }
     }
+
 
 
     onDocumentMouseMove (event) {
@@ -335,12 +412,6 @@ class MyGL2{
         if (this.selection) {
             // Check the position where the plane is intersected
             let intersects = this.raycaster.intersectObject(this.plane);
-
-            // Reposition the object based on the intersection point with the plane
-            // this.selection.position.copy(intersects[0].point.sub(this.offset));
-            
-            // let newpos = intersects[0].point.sub(this.offset);
-            // this.moveMol(newpos)
 
         } else {
             // Update position of the plane if need
@@ -365,10 +436,7 @@ class MyGL2{
 
         // Enable the controls
         this.controls.enabled = true;
-        // if (this.selection){
-        //   this.selection.material.transparent = false;
-        //   this.selection = null;
-        // }
+
     }
 
     // Update controls and stats

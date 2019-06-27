@@ -13,6 +13,7 @@ class MModel{
 		let acnt = 0;
 		if (datatype.toLowerCase() == "pdb"){
 			const mjson = parsePdb(datastr);
+			console.log(`model.loadMol: parsePdb done:`)
 	        console.log(mjson)
 	        if (mjson.atoms.length > 0){
 	            while (mname in this.mol){
@@ -50,7 +51,7 @@ class MModel{
 		this.mol[atom.molecule][atom.chainID][atom.resName].push(atom)
 	}
 
-	get_gl_objects(mname, model="cpk"){
+	get_gl_objects(mname, model="CPK"){
 		if ( !(mname in this.mol)) {
 			return null;
 		}
@@ -63,45 +64,82 @@ class MModel{
 		// console.dir(atomlist)
 
 		let alist = [];
-		model = model.toLowerCase()
-		// console.log(`get_gl_objects : ${model}`)
-		if ( model == "cpk" || model.indexOf("stick") > -1 ) {
-			let [qual, size] = ["HIGH", 1.0];
-			if ( model == "ballstick" || model == "ballstick2" ){
-				[qual, size] = ["NORMAL", 0.15];
-			} else if ( model == "stick" ){
-				[qual, size] = ["NORMAL", -1];
-			}
+		let visible = true;
 
+		let [qual, size] = ["HIGH", 1.0];
+		if ( model == "BallStick" || model == "BallStick2" ){
+			if (atomlist.length > 2000){
+				[qual, size] = ["LOW", 0.15];
+			} else {
+				[qual, size] = ["NORMAL", 0.15];
+			}
+			
+		} else if ( model == "Stick" ){
+			if (atomlist.length > 500){
+				[qual, size] = ["SUPER_LOW", -1];
+			} else {
+				[qual, size] = ["LOW", -1];
+			}
+			
+		} 
+
+		// else {
+		// 	[qual, size] = ["SUPER_LOW", -1];
+		// 	visible = false;	// no visual; for hit detection
+		// }
+
+		if (model.indexOf("Wire") == -1){
 			atomlist.forEach( (o) => {
-				alist.push(o.ball(qual, size))
+				const mesh = o.ball(qual, size, visible);
+				mesh.model = model;
+				alist.push(mesh)
 			})
 		}
+			
+		let geotype = "LINE";
+		if (model == "BallStick2"){
+			geotype = "CONE";
+		} else if (model.indexOf("Stick") > -1){
+			geotype = "STICK";
+		}	
+		
+		//// use stick for line - for picking
+		// if (model != "CPK"){
+		// 	for (let i=1; i<atomlist.length; i++){
+		// 		for(let n = 0; n<i; n++){
+		// 			let afrom = atomlist[i];
+		// 			let ato = atomlist[n];
+		// 			if (Bond.bondto(afrom, ato)){
+		// 				let bond = new Bond({from : afrom, to : ato})
+		// 				bond.cylinder(geotype).forEach( (mesh) => { alist.push(mesh) });
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		if ( model.indexOf("wire") > -1 ){
+
+		if ( model.indexOf("Wire") > -1 ){
 			for (let i=1; i<atomlist.length; i++){
 				for(let n = 0; n<i; n++){
 					let afrom = atomlist[i];
 					let ato = atomlist[n];
 					if (Bond.bondto(afrom, ato)){
 						let bond = new Bond({from : afrom, to : ato})
-						if (model == "wire"){
-							alist.push(bond.color_divide_line());
-						} else {
-							alist.push(bond.color_gradient_line());
-						}
+						let mesh = ( model == "Wire" ) ? bond.color_divide_line() : bond.color_gradient_line();
+						mesh.model = model;
+						alist.push(mesh);
 					}
 				}
 			}
-		} else if ( model.indexOf("stick") > -1 ){
-			let cone = (model == "ballstick2") ? true: false;
+		} else if ( model.indexOf("Stick") > -1 ){
+			let cone = (model == "BallStick2") ? true: false;
 			for (let i=1; i<atomlist.length; i++){
 				for(let n = 0; n<i; n++){
 					let afrom = atomlist[i];
 					let ato = atomlist[n];
 					if (Bond.bondto(afrom, ato)){
 						let bond = new Bond({from : afrom, to : ato})
-						bond.cylinder(cone).forEach( (mesh) => { alist.push(mesh) });
+						bond.cylinder(geotype).forEach( (mesh) => { alist.push(mesh) });
 					}
 				}
 			}
