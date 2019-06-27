@@ -36097,6 +36097,7 @@ function (_THREE$Vector) {
 
       var quality = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "NORMAL";
       var scale = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
+      var visible = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
       // Set up the mesh lets
       // console.log(`ball ${quality}`)
       var size = Atom.VDWR[Atom.ATOM_NUMBER[this.element]];
@@ -36116,6 +36117,7 @@ function (_THREE$Vector) {
 
       (_mesh$position = mesh.position).set.apply(_mesh$position, _toConsumableArray(this.toArray()));
 
+      mesh.visible = visible;
       return this.wrapupGLMesh(mesh);
     }
   }, {
@@ -36126,9 +36128,8 @@ function (_THREE$Vector) {
       obj.molecule = _ref[1];
       obj.chain = _ref[2];
       obj.group = _ref[3];
-      obj.molname = this.molecule;
-      obj.name = this.name;
       obj.type = "ATOM";
+      obj.data = this;
       return obj;
     }
   }, {
@@ -36140,6 +36141,12 @@ function (_THREE$Vector) {
     key: "atomicNum",
     value: function atomicNum() {
       return Atom.ATOM_NUMBER[this.element];
+    } // group name / chain name / molecule name
+
+  }, {
+    key: "in",
+    value: function _in(level, name) {
+      return this[level] == name;
     }
   }]);
 
@@ -36440,61 +36447,8 @@ function () {
 
       var line = new _three.default.Line(geometry, lineMaterial);
       line.group = this.pair[0].group;
+      line.data = this;
       return this.wrapupGLMesh(line);
-    }
-  }, {
-    key: "_cylinder2",
-    value: function _cylinder2(v1, v2, color, size, atom, matename, cone, length, orientation) {
-      var edgeGeometry = cone ? new _three.default.CylinderGeometry(size * 1.5, 0, length, 32, 1) : new _three.default.CylinderGeometry(size, size, length, 32, 1);
-      var material = new _three.default.MeshPhongMaterial({
-        color: color
-      });
-      var edge = new _three.default.Mesh(edgeGeometry, material);
-      edge.applyMatrix(orientation); // position based on midpoints - there may be a better solution than this
-
-      edge.position.x = 0.5 * (v1.x + v2.x);
-      edge.position.y = 0.5 * (v1.y + v2.y);
-      edge.position.z = 0.5 * (v1.z + v2.z);
-      edge.type = "BOND";
-      edge.group = atom.group;
-      edge.name = "".concat(atom.name, "-").concat(matename);
-      return edge;
-    }
-  }, {
-    key: "cylinder2",
-    value: function cylinder2() {
-      var cone = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var direction = new _three.default.Vector3().subVectors(this.pair[0], this.pair[1]);
-      var rotm = new _three.default.Matrix4();
-      rotm.set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1); // first half from A to B
-
-      var orientation = new _three.default.Matrix4();
-      orientation.lookAt(this.pair[0], this.pair[1], new _three.default.Object3D().up);
-      orientation.multiply(rotm);
-      var v1 = this.pair[0];
-
-      var v2 = _construct(_three.default.Vector3, _toConsumableArray(this.center_position()));
-
-      var vec = new _three.default.Vector3().subVectors(v1, v2);
-      var color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[0].element]];
-
-      var c1 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[1].name, cone, vec.length(), orientation); // second half from B to A
-
-
-      orientation = new _three.default.Matrix4();
-      orientation.lookAt(this.pair[1], this.pair[0], new _three.default.Object3D().up);
-      orientation.multiply(rotm);
-      v1 = this.pair[1];
-      color = Atom.COLOR[Atom.ATOM_NUMBER[this.pair[1].element]];
-      vec = new _three.default.Vector3().subVectors(v1, v2);
-
-      var c2 = this._cylinder(v1, v2, color, 0.06, v1, this.pair[0].name, cone, vec.length(), orientation);
-
-      c1.mate = c2;
-      c2.mate = c1;
-      c1 = this.wrapupGLMesh(c1);
-      c2 = this.wrapupGLMesh(c2);
-      return [c1, c2];
     }
   }, {
     key: "_cylinder",
@@ -36502,28 +36456,29 @@ function () {
       var material = new _three.default.MeshPhongMaterial({
         color: color
       });
-      var edge = new _three.default.Mesh(edgeGeometry, material);
-      edge.applyMatrix(orientation); // position based on midpoints - there may be a better solution than this
+      var mesh = new _three.default.Mesh(edgeGeometry, material);
+      mesh.applyMatrix(orientation); // position based on midpoints - there may be a better solution than this
 
-      edge.scale.y = length;
-      edge.position.x = 0.5 * (v1.x + v2.x);
-      edge.position.y = 0.5 * (v1.y + v2.y);
-      edge.position.z = 0.5 * (v1.z + v2.z);
-      edge.type = "BOND";
-      edge.group = atom.group;
-      edge.name = "".concat(atom.name, "-").concat(matename);
-      return edge;
+      mesh.scale.y = length;
+      mesh.position.x = 0.5 * (v1.x + v2.x);
+      mesh.position.y = 0.5 * (v1.y + v2.y);
+      mesh.position.z = 0.5 * (v1.z + v2.z);
+      mesh.type = "BOND";
+      mesh.group = atom.group;
+      mesh.data = this;
+      mesh.name = "".concat(atom.name, "-").concat(matename);
+      return mesh;
     }
   }, {
     key: "cylinder",
     value: function cylinder() {
-      var cone = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var geotype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "LINE";
       var quality = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "HIGH";
       var direction = new _three.default.Vector3().subVectors(this.pair[0], this.pair[1]);
       var rotm = new _three.default.Matrix4();
       rotm.set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1); // reuse the cylinderGeo
+      // const geotype = cone ? "CONE" : "STICK";
 
-      var geotype = cone ? "CONE" : "STICK";
       var geo = Bond.MODEL[geotype][quality]; // first half from A to B
 
       var orientation = new _three.default.Matrix4();
@@ -36616,6 +36571,12 @@ function () {
     key: "length",
     value: function length() {
       return this.pair[0].distanceTo(this.pair[1]);
+    } // levelname : group name / chain name / molecule name; true if both atom are in
+
+  }, {
+    key: "in",
+    value: function _in(level, name) {
+      return this.pair[0].in(level, name) && this.pair[1].in(level, name);
     }
   }, {
     key: "type",
@@ -36653,22 +36614,31 @@ Bond.BOND_TYPE = {
   "8_15": 1.7
 };
 Bond.STICK_SIZE = 0.06;
+Bond.LINE_SIZE = 0.06;
+Bond.LINE_FACES = 6;
 Bond.MODEL = {
   CONE: {
-    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, false),
-    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, false),
-    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, false),
-    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, false),
-    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, false)
+    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 40, 1, true),
+    //open end 
+    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 32, 1, true),
+    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 26, 1, true),
+    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 10, 1, true),
+    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE * 1.5, 0, 1, 8, 1, true)
   },
   STICK: {
-    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, false),
-    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, false),
-    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, false),
-    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, false),
-    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, false)
+    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 40, 1, true),
+    HIGH: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 32, 1, true),
+    NORMAL: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 26, 1, true),
+    LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 10, 1, true),
+    SUPER_LOW: new _three.default.CylinderGeometry(Bond.STICK_SIZE, Bond.STICK_SIZE, 1, 8, 1, true)
   },
-  LINE: new _three.default.BufferGeometry()
+  LINE: {
+    SUPER_HIGH: new _three.default.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+    HIGH: new _three.default.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+    NORMAL: new _three.default.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+    LOW: new _three.default.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true),
+    SUPER_LOW: new _three.default.CylinderGeometry(Bond.LINE_SIZE, Bond.LINE_SIZE, 1, Bond.LINE_FACES, 1, true)
+  }
 };
 
 Bond.bondto = function (afrom, ato) {
@@ -36815,6 +36785,7 @@ function () {
 
       if (datatype.toLowerCase() == "pdb") {
         var mjson = parsePdb(datastr);
+        console.log("model.loadMol: parsePdb done:");
         console.log(mjson);
 
         if (mjson.atoms.length > 0) {
@@ -36857,7 +36828,7 @@ function () {
   }, {
     key: "get_gl_objects",
     value: function get_gl_objects(mname) {
-      var model = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "cpk";
+      var model = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "CPK";
 
       if (!(mname in this.mol)) {
         return null;
@@ -36871,26 +36842,62 @@ function () {
 
 
       var alist = [];
-      model = model.toLowerCase(); // console.log(`get_gl_objects : ${model}`)
+      var visible = true;
+      var qual = "HIGH",
+          size = 1.0;
 
-      if (model == "cpk" || model.indexOf("stick") > -1) {
-        var qual = "HIGH",
-            size = 1.0;
-
-        if (model == "ballstick" || model == "ballstick2") {
+      if (model == "BallStick" || model == "BallStick2") {
+        if (atomlist.length > 2000) {
+          qual = "LOW";
+          size = 0.15;
+        } else {
           qual = "NORMAL";
           size = 0.15;
-        } else if (model == "stick") {
-          qual = "NORMAL";
+        }
+      } else if (model == "Stick") {
+        if (atomlist.length > 500) {
+          qual = "SUPER_LOW";
+          size = -1;
+        } else {
+          qual = "LOW";
           size = -1;
         }
+      } // else {
+      // 	[qual, size] = ["SUPER_LOW", -1];
+      // 	visible = false;	// no visual; for hit detection
+      // }
 
+
+      if (model.indexOf("Wire") == -1) {
         atomlist.forEach(function (o) {
-          alist.push(o.ball(qual, size));
+          var mesh = o.ball(qual, size, visible);
+          mesh.model = model;
+          alist.push(mesh);
         });
       }
 
-      if (model.indexOf("wire") > -1) {
+      var geotype = "LINE";
+
+      if (model == "BallStick2") {
+        geotype = "CONE";
+      } else if (model.indexOf("Stick") > -1) {
+        geotype = "STICK";
+      } //// use stick for line - for picking
+      // if (model != "CPK"){
+      // 	for (let i=1; i<atomlist.length; i++){
+      // 		for(let n = 0; n<i; n++){
+      // 			let afrom = atomlist[i];
+      // 			let ato = atomlist[n];
+      // 			if (Bond.bondto(afrom, ato)){
+      // 				let bond = new Bond({from : afrom, to : ato})
+      // 				bond.cylinder(geotype).forEach( (mesh) => { alist.push(mesh) });
+      // 			}
+      // 		}
+      // 	}
+      // }
+
+
+      if (model.indexOf("Wire") > -1) {
         for (var i = 1; i < atomlist.length; i++) {
           for (var n = 0; n < i; n++) {
             var afrom = atomlist[i];
@@ -36901,17 +36908,14 @@ function () {
                 from: afrom,
                 to: ato
               });
-
-              if (model == "wire") {
-                alist.push(bond.color_divide_line());
-              } else {
-                alist.push(bond.color_gradient_line());
-              }
+              var mesh = model == "Wire" ? bond.color_divide_line() : bond.color_gradient_line();
+              mesh.model = model;
+              alist.push(mesh);
             }
           }
         }
-      } else if (model.indexOf("stick") > -1) {
-        var cone = model == "ballstick2" ? true : false;
+      } else if (model.indexOf("Stick") > -1) {
+        var cone = model == "BallStick2" ? true : false;
 
         for (var _i = 1; _i < atomlist.length; _i++) {
           for (var _n = 0; _n < _i; _n++) {
@@ -36924,7 +36928,7 @@ function () {
                 to: _ato
               });
 
-              _bond.cylinder(cone).forEach(function (mesh) {
+              _bond.cylinder(geotype).forEach(function (mesh) {
                 alist.push(mesh);
               });
             }
@@ -37140,6 +37144,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 var MyGL2 =
 /*#__PURE__*/
 function () {
+  // # times the same object is clicked
   function MyGL2(viewid) {
     var _this = this;
 
@@ -37174,6 +37179,16 @@ function () {
     _defineProperty(this, "objects", null);
 
     _defineProperty(this, "atomHighlight", null);
+
+    _defineProperty(this, "meshlist", []);
+
+    _defineProperty(this, "pick_cnt", 0);
+
+    _defineProperty(this, "pick_level", {
+      2: "group",
+      3: "chain",
+      4: "molecule"
+    });
 
     // Create main scene
     this.view = document.getElementById(viewid);
@@ -37411,8 +37426,7 @@ function () {
     value: function onDocumentMouseDown(event) {
       // Get mouse position
       // console.log('onDocumentMouseDown')
-      event.preventDefault();
-      this.toggle_highlight(false);
+      event.preventDefault(); // this.toggle_highlight();
 
       var _this$mouse_relative_ = this.mouse_relative_position(event),
           _this$mouse_relative_2 = _slicedToArray(_this$mouse_relative_, 2),
@@ -37441,59 +37455,134 @@ function () {
         // console.dir(intersects)
         // debug - change to random color for all hits
         var color = this.random_color();
+        var atom = null;
+        var bond = null;
         intersects.forEach(function (o) {
           var mesh = o.object;
-          console.log("selected ".concat(mesh.type, "-").concat(mesh.molecule, ":").concat(mesh.chain, ":").concat(mesh.group, ":").concat(mesh.name)); // o.object.material.color.set(color);
-          // if (o.object.type == "BOND"){
-          //     o.object.mate.material.color.set(color);
-          // }
+
+          if (!atom && o.object.type == "ATOM") {
+            atom = o.object;
+          }
+
+          if (!bond && o.object.type == "BOND") {
+            bond = o.object;
+          }
         });
+        var hitObj = atom ? atom : bond;
 
-        if (intersects[0].object.type == "ATOM") {
+        if (hitObj) {
           // since bond to atom is "under", [0] will always be the atom
-          //  the controls
-          this.controls.enabled = false; // Set the selection - first intersected object
-          // if (this.atomHighlight){
-          //     this.scene.remote(this.atomHighlight);
-          //     this.atomHighlight.geometry.dispose();
-          //     this.atomHighlight.material.dispose();
-          //     this.atomHighlight = null;
-          // }
+          console.log("selected ".concat(hitObj.type, "-").concat(hitObj.molecule, ":").concat(hitObj.chain, ":").concat(hitObj.group, ":").concat(hitObj.name)); //  the controls
 
-          this.selection = intersects[0].object;
-          this.toggle_highlight(); // this.atomHighlight = this.selection.clone();
-          // this.atomHighlight.wireframe = true;
-          // this.atomHighlight.opacity = 0.5;
-          // let sf = 1.25;  // scale factor
-          // this.atomHighlight.scale.x *= sf;
-          // this.atomHighlight.scale.y *= sf;
-          // this.atomHighlight.scale.z *= sf;
-          // this.atomHighlight.material.color.set(0x800080)  // purple
-          // this.scene.add(this.atomHighlight)
-          // this.selection.material.color.set(this.random_color());
-          // console.dir(this.selection)
-          // Calculate the offset
+          this.controls.enabled = false; // Calculate the offset
 
           var tmp = this.raycaster.intersectObject(this.plane);
           this.offset.copy(tmp[0].point).sub(this.plane.position);
+          this.toggle_highlight(hitObj);
         }
       }
     }
   }, {
     key: "toggle_highlight",
-    value: function toggle_highlight() {
-      var flag = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    value: function toggle_highlight(hitObj) {
+      if (hitObj == undefined) {
+        return;
+      } // const hasSelectedBefore = (hitObj && hitObj == this.selection) ? true : false;
 
-      if (this.selection) {
-        if (flag) {
-          this.selection.material.transparent = true;
-          this.selection.material.opacity = 0.85; // this.selection.material.wireframe = true;
-        } else {
-          this.selection.material.transparent = false;
-          this.selection.material.opacity = 1.0; // this.selection.material.wireframe = false;
 
+      var hasSelectedBefore = this.meshlist.indexOf(hitObj) > -1;
+
+      if (!hasSelectedBefore) {
+        this.pick_cnt = 1;
+
+        if (this.selection) {
+          console.log("reset selected");
+          this.update_selected(true);
           this.selection = null;
+          this.meshlist = [];
         }
+
+        this.selection = hitObj;
+        this.meshlist.push(hitObj);
+        this.update_selected(); // this.selection.material.transparent = false;
+        // this.selection.material.opacity = 1.0;
+        // this.selection.material.color = this.selection.ori_color;
+        // // this.selection.material.wireframe = false;
+        // this.selection = null; 
+        // 
+      } else {
+        this.pick_cnt++; // console.log(`call collect_mesh for level ${this.pick_level[this.pick_cnt]}`)
+
+        var alist = this.collect_mesh(hitObj);
+        console.log("old len=".concat(this.meshlist.length, "; new len=").concat(alist.length));
+
+        if (alist.length > this.meshlist.length) {
+          this.meshlist = alist;
+          this.update_selected();
+        } else if (alist.length == this.meshlist.length) {
+          // has to be !
+          this.update_selected(true); // reset
+        } else {} // error !
+          // select the next level
+          // this.selection = hitObj;
+          // this.meshlist.push(hitObj);
+          // this.update_selected();
+
+      } // if (highlighSelected){
+      //     this.selection = hitObj;
+      //     this.selection.material.transparent = true;
+      //     this.selection.material.opacity = 0.85;
+      //     this.selection.ori_color = this.selection.material.color.clone();
+      //     this.selection.material.color.setHex(0xffff00);
+      // }
+
+    }
+  }, {
+    key: "collect_mesh",
+    value: function collect_mesh(mesh) {
+      var level = this.pick_level[this.pick_cnt];
+      var alist = []; // DEBUG: 
+
+      this.mesh = mesh;
+      console.log("".concat(level, "; mesh.level=").concat(mesh.data[level]));
+
+      if (level) {
+        var lname = mesh[level];
+        this.scene.children.forEach(function (o) {
+          if (o.type == "ATOM" || o.type == "BOND") {
+            if (o.data.in(level, lname)) {
+              alist.push(o);
+            }
+          }
+        });
+      }
+
+      return alist;
+    }
+  }, {
+    key: "update_selected",
+    value: function update_selected() {
+      var restore = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      if (restore) {
+        this.meshlist.forEach(function (m) {
+          m.material.transparent = false;
+          m.material.opacity = 1.0;
+          m.material.color = m.ori_color.clone();
+        });
+        this.selection = null;
+        this.meshlist = [];
+      } else {
+        this.meshlist.forEach(function (m) {
+          m.material.transparent = true;
+          m.material.opacity = 0.85;
+
+          if (m.ori_color == undefined) {
+            m.ori_color = m.material.color.clone();
+          }
+
+          m.material.color.setHex(0xffff00);
+        });
       }
     }
   }, {
@@ -37520,10 +37609,7 @@ function () {
 
       if (this.selection) {
         // Check the position where the plane is intersected
-        var intersects = this.raycaster.intersectObject(this.plane); // Reposition the object based on the intersection point with the plane
-        // this.selection.position.copy(intersects[0].point.sub(this.offset));
-        // let newpos = intersects[0].point.sub(this.offset);
-        // this.moveMol(newpos)
+        var intersects = this.raycaster.intersectObject(this.plane);
       } else {
         // Update position of the plane if need
         var _intersects = this.raycaster.intersectObjects(this.objects);
@@ -37550,10 +37636,7 @@ function () {
       } // Enable the controls
 
 
-      this.controls.enabled = true; // if (this.selection){
-      //   this.selection.material.transparent = false;
-      //   this.selection = null;
-      // }
+      this.controls.enabled = true;
     } // Update controls and stats
 
   }, {
@@ -37714,7 +37797,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50689" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58926" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
