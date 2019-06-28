@@ -13,7 +13,7 @@
 import THREE from 'three';
 import Stats from 'stats-js';
 import MModel from './model';
-import { mousePositionElement } from './js/mouse';
+import { mousePositionElement } from './mouse';
 
 class MyGL2{
     scene = null;
@@ -40,6 +40,7 @@ class MyGL2{
         3 : "chain",
         4 : "molecule"
     }
+    shiftdown  = false;
 
     constructor(viewid) {
 
@@ -88,8 +89,11 @@ class MyGL2{
             document.addEventListener('mousedown', (e)=>this.onDocumentMouseDown(e), false);
             document.addEventListener('mousemove', (e)=>this.onDocumentMouseMove(e), false);
             document.addEventListener('mouseup', (e)=>this.onDocumentMouseUp(e), false);
+
             window.addEventListener('resize', (e)=>this.resize(e), false);
         }
+        document.addEventListener("keydown", (e)=>this.onDocumentKeyDown(e), false);
+        document.addEventListener("keyup", (e)=>this.onDocumentKeyUp(e), false);
 
         // Prepare Orbit controls
         if (this.view){
@@ -171,27 +175,41 @@ class MyGL2{
             this.model = new MModel();
         }
 
-        // clear the old mol
-        if (this.objects){
-            this.clearMol();
+        if (this.meshlist.length == 0){
+            // clear the old mol
+            if (this.objects){
+                this.clearDisplayObjects(this.objects);
+                this.objects = null;
+            }
+
+            this.objects = this.model.get_gl_objects(mname, model);
+            if (this.objects){
+                this.objects.forEach( (o) => this.scene.add(o) );
+            }
+        } else {
+            this.clearDisplayObjects(this.meshlist);
+            let mlist = []
+            this.meshlist.forEach( (m) => {
+                const mesh = m.data.model(model, this.meshlist);
+                if (mesh){
+                    mlist.push(mesh);
+                }
+            })
+            
+            mlist.forEach( (o) => { this.scene.add(o) })
         }
 
-        this.objects = this.model.get_gl_objects(mname, model);
-        if (this.objects){
-            this.objects.forEach( (o) => this.scene.add(o) );
-        }
         return this;
     }
 
-    clearMol(){
-        if (this.objects){
-            this.objects.forEach( (o) => {
-                let obj = this.scene.getObjectByProperty("uuid", o.uuid);
-                obj.geometry.dispose();
-                obj.material.dispose();
-                this.scene.remove(obj);
+    clearDisplayObjects(objects){
+        if (objects){
+            objects.forEach( (o) => {
+                // let obj = this.scene.getObjectByProperty("uuid", o.uuid);
+                // obj.geometry.dispose();  // do not rm geometry - shared
+                o.material.dispose();
+                this.scene.remove(o);
             })
-            this.objects = null;
         }
         return this;
     }
@@ -289,6 +307,56 @@ class MyGL2{
         }
     }
 
+    onDocumentMouseMove (event) {
+        if ( !this.objects ){ return; }
+
+        event.preventDefault();
+
+        // Get mouse position
+        let [ex, ey] = this.mouse_relative_position(event);
+        let mouseX = (ex / this.width) * 2 - 1;
+        let mouseY = -(ey / this.height) * 2 + 1;
+
+        // Get 3D vector from 3D mouse position using 'unproject' function
+        let vector = new THREE.Vector3(mouseX, mouseY, 1);
+        vector.unproject(this.camera);
+
+        // Set the raycaster position
+        this.raycaster.set( this.camera.position, vector.sub( this.camera.position ).normalize() );
+
+        if (this.selection) {
+            // Check the position where the plane is intersected
+            let intersects = this.raycaster.intersectObject(this.plane);
+
+        } else {
+            // Update position of the plane if need
+            let intersects = this.raycaster.intersectObjects(this.objects);
+            if (intersects.length > 0) {
+              this.plane.position.copy(intersects[0].object.position);
+              this.plane.lookAt(this.camera.position);
+            }
+        }
+    }
+
+    onDocumentMouseUp (event) {
+        if ( !this.objects ){ return; }
+
+        // Enable the controls
+        this.controls.enabled = true;
+
+    }
+
+    onDocumentKeyDown (event){
+        let keyCode = event.which;
+        this.shiftdown = event.shiftKey;
+        console.log(`shiftkeydown=${this.shiftdown}`)
+    }
+
+    onDocumentKeyUp (event){
+        this.shiftdown = false;
+        console.log(`shiftkeydown=${this.shiftdown}`)
+    }
+
     toggle_highlight(hitObj){
         if (hitObj == undefined){
             return;
@@ -308,12 +376,6 @@ class MyGL2{
             this.meshlist.push(hitObj);
             this.update_selected();
             
-            // this.selection.material.transparent = false;
-            // this.selection.material.opacity = 1.0;
-            // this.selection.material.color = this.selection.ori_color;
-            // // this.selection.material.wireframe = false;
-            // this.selection = null; 
-            // 
         } else {
 
             this.pick_cnt++;
@@ -327,25 +389,8 @@ class MyGL2{
                 this.update_selected(true);  // reset
             } else {
                 // error !
-            }
-            // select the next level
-            
-                // this.selection = hitObj;
-                // this.meshlist.push(hitObj);
-                // this.update_selected();
-            
+            }     
         }
-
-
-
-
-        // if (highlighSelected){
-        //     this.selection = hitObj;
-        //     this.selection.material.transparent = true;
-        //     this.selection.material.opacity = 0.85;
-        //     this.selection.ori_color = this.selection.material.color.clone();
-        //     this.selection.material.color.setHex(0xffff00);
-        // }
     }
 
     collect_mesh(mesh){
@@ -390,53 +435,12 @@ class MyGL2{
         }
     }
 
-
-
-    onDocumentMouseMove (event) {
-        if ( !this.objects ){ return; }
-
-        event.preventDefault();
-
-        // Get mouse position
-        let [ex, ey] = this.mouse_relative_position(event);
-        let mouseX = (ex / this.width) * 2 - 1;
-        let mouseY = -(ey / this.height) * 2 + 1;
-
-        // Get 3D vector from 3D mouse position using 'unproject' function
-        let vector = new THREE.Vector3(mouseX, mouseY, 1);
-        vector.unproject(this.camera);
-
-        // Set the raycaster position
-        this.raycaster.set( this.camera.position, vector.sub( this.camera.position ).normalize() );
-
-        if (this.selection) {
-            // Check the position where the plane is intersected
-            let intersects = this.raycaster.intersectObject(this.plane);
-
-        } else {
-            // Update position of the plane if need
-            let intersects = this.raycaster.intersectObjects(this.objects);
-            if (intersects.length > 0) {
-              this.plane.position.copy(intersects[0].object.position);
-              this.plane.lookAt(this.camera.position);
-            }
-        }
-    }
-
     moveMol(pos){
         if (this.objects){
             this.objects.forEach( (o) => {
                 // o.position.copy(pos);
             })
         } 
-    }
-
-    onDocumentMouseUp (event) {
-        if ( !this.objects ){ return; }
-
-        // Enable the controls
-        this.controls.enabled = true;
-
     }
 
     // Update controls and stats

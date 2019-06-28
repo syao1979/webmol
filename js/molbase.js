@@ -64,6 +64,45 @@ class Atom extends THREE.Vector3 {
 	in(level, name){
 		return (this[level] == name);
 	}
+
+	_model_qual(model, molsize){
+		let qual = "HIGH";
+		let size = 1.0;
+		let visible = true;
+
+		if ( model == "BallStick" || model == "BallStick2" ){
+			if (molsize > 2000){
+				qual = "LOW";
+				size = 0.15;
+			} else {
+				qual = "NORMAL";
+				size = 0.15;
+			}
+			
+		} else if ( model == "Stick" ){
+			if (molsize > 500){
+				qual = "SUPER_LOW";
+				size = -1;
+			} else {
+				qual = "LOW";
+				size = -1;
+			}
+		} else if (model.toLowerCase().indexOf("wire") > -1){
+			// TODO : wire form
+			qual = -1;
+			size = -1;
+		}
+
+		return {qual, size, visible}
+	}
+
+	model(model, atomlist){
+		const quality = this._model_qual(model, atomlist.length);
+		if (quality.qual == -1){
+			return null;
+		}
+		return this.ball(quality.qual, quality.size, quality.visible);
+	}
 }
 
 Atom.MODEL = {
@@ -451,6 +490,23 @@ class Bond{
 		obj.type = "BOND";
 		obj.atoms = this.pair
 		return obj;
+	}
+
+	model(model, atomlist){
+		model = model.toLowerCase();
+
+		if (model.indexOf("wire") > -1) {
+			const mesh = (model == "wire") ? this.color_divide_line() : this.color_gradient_line()
+			return [ mesh ];
+		} else {
+			let geotype = "LINE";
+			if (model == "ballstick2"){
+				geotype = "CONE";
+			} else if (model.indexOf("stick") > -1){
+				geotype = "STICK";
+			}
+			return this.cylinder(geotype)
+		}
 	}
 }
 

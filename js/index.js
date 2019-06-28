@@ -11,7 +11,7 @@
 //  */
 
 import './OrbitControls';
-import MyGL2 from '../mygl2';
+import MyGL2 from './mygl2';
 
 var GL = null;
 // when DOM is ready ...
