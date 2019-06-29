@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Border Layout</title>
+    <link rel="stylesheet" href="src/border.css">
+</head>
+<body>
+<style>
+    .north, .south {
+        background-color: #bbb;
+        border: 1px solid black;
+        line-height: 30px;
+    }
+
+    .north span {
+        margin-right: 3em;
+    }
+
+    .west, .east {
+        background-color: #eee;
+        border: 1px solid black;
+    }
+
+    .west .content div {
+        padding-left: 20px;
+    }
+
+</style>
+A border layout looks like this:
+<div class="border-layout" style="height: 300px; width: 700px">
+    <div class="north resizable" size="20%">
+        <div class="content">
+            North
+        </div>
+    </div>
+    <div class="west resizable" size="20%">
+        <div class="content">
+            West
+        </div>
+    </div>
+    <div class="east resizable" size="20%">
+        <div class="content">
+            East
+        </div>
+    </div>
+    <div class="south resizable" size="20%">
+        <div class="content">
+            South
+        </div>
+    </div>
+    <div class="center">
+        <div class="content">
+            Center
+        </div>
+    </div>
+</div>
+
+<br>
+It could be used for a IDE style application:
+
+<div class="border-layout" style="height: 200px; width: 700px">
+    <div class="north" size="30px">
+        <div class="content">
+            <span style="font-weight: bold">Demo menu</span>
+            <span>File</span>
+            <span>Edit</span>
+            <span>View</span>
+            <span>Navigate</span>
+            <span>Help</span>
+        </div>
+    </div>
+    <div class="west resizable" size="20%" min-size="30px" max-size="30%">
+        <div class="content">
+            Files
+            <div>
+                js-border-layout
+                <div>
+                    .idea <br>
+                    src
+                    <div>
+                        border.css <br>
+                        border.js
+                    </div>
+                    .gitignore<br>
+                    index.html<br>
+                    LICENSE<br>
+                    README.md<br>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="east resizable" size="20%" min-size="0px" max-size="50%">
+        <div class="content">
+            A tool menu or something
+        </div>
+    </div>
+    <div class="south" size="30px">
+        <div class="content">
+            some status information
+        </div>
+    </div>
+    <div class="center">
+        <div class="content">
+            <textarea style="width: 100%; height: 100%">A simple text editor</textarea>
+        </div>
+    </div>
+</div>
+<script src="src/border.js"></script>
+<script>
+    borderLayout(document.querySelectorAll('.border-layout')[0]);
+    borderLayout(document.querySelectorAll('.border-layout')[1]);
+</script>
+</body>
+</html>

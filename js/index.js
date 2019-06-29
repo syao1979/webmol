@@ -12,13 +12,13 @@
 
 import './OrbitControls';
 import MyGL2 from './mygl2';
+import BorderLayout from './border';
 
 var GL = null;
 // when DOM is ready ...
 $( function() {
-	$( "#tabs" ).tabs().show();
+	new BorderLayout(document.querySelectorAll('.border-layout')[0], glviewsize);
 	GL = new MyGL2("glview");
-	// GL.loadMol($("#pdb").html());
 	if (process.env.NODE_ENV === 'development'){
 		window.GL = GL;
 	}
@@ -78,6 +78,10 @@ function loadedMoleculeName(mname){
 		$("#molecule").show();
 		$("#molecule")[0].selectedIndex = 0; 	// make the 1st option is current
 	}
+}
+
+function glviewsize(e){
+	GL.setSize(e.centerW, e.centerH);
 }
 
 document.getElementById('file').addEventListener('change', handleFileSelect, false);

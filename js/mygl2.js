@@ -14,6 +14,7 @@ import THREE from 'three';
 import Stats from 'stats-js';
 import MModel from './model';
 import { mousePositionElement } from './mouse';
+import { appendInfo, treeview } from './utils';
 
 class MyGL2{
     scene = null;
@@ -66,7 +67,7 @@ class MyGL2{
         this.renderer = new THREE.WebGLRenderer({ antialias:true });
         this.renderer.setSize(this.width, this.height);
         // this.renderer.setClearColor(this.scene.fog.color);
-        this.renderer.setClearColor(0x333333);
+        this.renderer.setClearColor(MyGL2.CLEAR_COLOR);
 
         // Prepare container
         if (this.view){
@@ -90,10 +91,12 @@ class MyGL2{
             document.addEventListener('mousemove', (e)=>this.onDocumentMouseMove(e), false);
             document.addEventListener('mouseup', (e)=>this.onDocumentMouseUp(e), false);
 
-            window.addEventListener('resize', (e)=>this.resize(e), false);
+            // window.addEventListener('resize', (e)=>this.resize(e), false);
         }
         document.addEventListener("keydown", (e)=>this.onDocumentKeyDown(e), false);
         document.addEventListener("keyup", (e)=>this.onDocumentKeyUp(e), false);
+        window.addEventListener('resize', (e)=>this.resize(e), false);
+        
 
         // Prepare Orbit controls
         if (this.view){
@@ -117,7 +120,10 @@ class MyGL2{
             this.clock = new THREE.Clock();
 
             this.stats = new Stats();
-            this.stats.domElement.style.position = 'absolute';
+            // this.stats.domElement.style.position = 'absolute';
+            // this.stats.domElement.style.position = 'relative';
+            this.stats.domElement.style.top = '40px';
+            this.stats.domElement.style.left = '120px';
             this.stats.domElement.style.zIndex = 1;
             if (this.view){
                 this.view.appendChild( this.stats.domElement );
@@ -198,7 +204,7 @@ class MyGL2{
             
             mlist.forEach( (o) => { this.scene.add(o) })
         }
-
+        this.show_tree();
         return this;
     }
 
@@ -242,7 +248,6 @@ class MyGL2{
     mouse_relative_position(event) {      
         let {x, y} = mousePositionElement(event);
         return [x, y]
-
     }
   
     onDocumentMouseDown (event) {
@@ -294,7 +299,7 @@ class MyGL2{
             const hitObj = atom ? atom : bond;
 
             if ( hitObj ){ // since bond to atom is "under", [0] will always be the atom
-                console.log(`selected ${hitObj.type}-${hitObj.molecule}:${hitObj.chain}:${hitObj.group}:${hitObj.name}`);
+                appendInfo(`selected ${hitObj.type}-${hitObj.molecule}:${hitObj.chain}:${hitObj.group}:${hitObj.name}`);
                 //  the controls
                 this.controls.enabled = false;
 
@@ -343,7 +348,6 @@ class MyGL2{
 
         // Enable the controls
         this.controls.enabled = true;
-
     }
 
     onDocumentKeyDown (event){
@@ -357,6 +361,24 @@ class MyGL2{
         console.log(`shiftkeydown=${this.shiftdown}`)
     }
 
+    show_tree(){
+        // var data = [
+        //     {
+        //         name: 'node1', id: 1,
+        //         children: [
+        //             { name: 'child1', id: 2 },
+        //             { name: 'child2', id: 3 }
+        //         ]
+        //     },
+        //     {
+        //         name: 'node2', id: 4,
+        //         children: [
+        //             { name: 'child3', id: 5 }
+        //         ]
+        //     }
+        // ];
+        // treeview(data);
+    }
     toggle_highlight(hitObj){
         if (hitObj == undefined){
             return;
@@ -463,11 +485,19 @@ class MyGL2{
         this.camera.updateProjectionMatrix();
     }
 
+    setSize(width, height){
+        if (this.view){
+            [this.view.style.clientWidth, this.view.style.clientHeight] = [width, height];
+        }
+        this.resize();
+    }
     random_color() {
         return '#' + (function co(lor){   return (lor +=
           [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f'][Math.floor(Math.random()*16)])
           && (lor.length == 6) ?  lor : co(lor); })('');
     }
 }
+
+MyGL2.CLEAR_COLOR = 0x333333;   // glview backgroud color
 
 export default MyGL2;

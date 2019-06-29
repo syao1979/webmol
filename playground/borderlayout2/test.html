@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Border Layout</title>
+    <link rel="stylesheet" href="src/border.css">
+</head>
+<body>
+<style>
+
+    html,body {
+        /* to make border layout full screen but no scroolbar */
+        height:100%;
+        margin: 0;
+    }
+    .north, .south {
+        background-color: #bbb;
+        border: 1px solid #999;
+        /*line-height: 30px;*/
+    }
+
+    .north span {
+        margin-right: 3em;
+    }
+
+    .west, .east {
+        background-color: #eee;
+        border: 1px solid #999;
+    }
+
+    .west .content div {
+        padding-left: 20px;
+    }
+
+</style>
+
+<div class="border-layout" style="height: 100%; width: 100%">
+    <div class="north resizable" style="height: 20px;">
+        <div class="content">
+            North
+        </div>
+    </div>
+    <div class="west resizable">
+        <div class="content">
+            West
+        </div>
+    </div>
+    <div class="east resizable" size="20%">
+        <div class="content">
+            East
+        </div>
+    </div>
+    <div class="south resizable" size="20%">
+        <div class="content">
+            South
+        </div>
+    </div>
+    <div class="center">
+        <div class="content">
+            Center
+        </div>
+    </div>
+</div>
+
+<script src="src/border.js"></script>
+<!-- <script src="../../../js/border.js"></script> -->
+<script>
+    new BorderLayout(document.querySelectorAll('.border-layout')[0]);
+    //borderLayout(document.querySelectorAll('.border-layout')[1]);
+</script>
+</body>
+</html>
