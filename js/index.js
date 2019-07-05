@@ -12,7 +12,8 @@
 
 import './OrbitControls';
 import MyGL2 from './mygl2';
-import BorderLayout from './border';
+import BorderLayout from './border/border';
+import "./tree/jquery.ztree.core.js"
 
 var GL = null;
 // when DOM is ready ...
@@ -81,7 +82,9 @@ function loadedMoleculeName(mname){
 }
 
 function glviewsize(e){
+	console.log(e)
 	GL.setSize(e.centerW, e.centerH);
+	GL.setStatsPosition(e.north, e.west);
 }
 
 document.getElementById('file').addEventListener('change', handleFileSelect, false);

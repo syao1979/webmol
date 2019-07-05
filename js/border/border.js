@@ -15,9 +15,9 @@ class BorderLayout {
         this.setInitSize('east', root.offsetWidth);
 
         this.redraw();
-        this.addDrag('north', 'bottom', {left: '0', bottom: '0', width: '100%', cursor: 'ns-resize'}, function (e) {
-            return this.origSize + e.clientY - this.origY;
-        });
+        // this.addDrag('north', 'bottom', {left: '0', bottom: '0', width: '100%', cursor: 'ns-resize'}, function (e) {
+        //     return this.origSize + e.clientY - this.origY;
+        // });
 
         this.addDrag('south', 'top', {left: '0', top: '0', width: '100%', cursor: 'ns-resize'}, function (e) {
             return this.origSize - e.clientY + this.origY;
@@ -79,7 +79,7 @@ class BorderLayout {
         let elem = this.area[name].element;
         if (elem) {
             this.area[name].size = this.unitToPx(elem.getAttribute('size') || '20%', parent);
-            this.area[name].minSize = this.unitToPx(elem.getAttribute('min-size') || '5px', parent);
+            this.area[name].minSize = this.unitToPx(elem.getAttribute('min-size') || '1px', parent);
             this.area[name].maxSize = this.unitToPx(elem.getAttribute('max-size') || '40%', parent);
         }
     }

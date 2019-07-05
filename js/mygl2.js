@@ -13,9 +13,10 @@
 import THREE from 'three';
 import Stats from 'stats-js';
 import MModel from './model';
+import IndentedCollapsibleTree from "./tree"
 import { mousePositionElement } from './mouse';
-import { appendInfo, treeview } from './utils';
-
+// import { appendInfo, treeview } from './utils';
+import { appendInfo } from './utils';
 class MyGL2{
     scene = null;
     camera = null; 
@@ -122,14 +123,16 @@ class MyGL2{
             this.stats = new Stats();
             // this.stats.domElement.style.position = 'absolute';
             // this.stats.domElement.style.position = 'relative';
-            this.stats.domElement.style.top = '40px';
-            this.stats.domElement.style.left = '120px';
+            this.stats.domElement.style.top = '30px';   // init north height in index
+            this.stats.domElement.style.left = '1px';   // init west width in index
             this.stats.domElement.style.zIndex = 1;
             if (this.view){
                 this.view.appendChild( this.stats.domElement );
             } else {
                 this.container.appendChild( this.stats.domElement );
             }
+        } else {
+            this.stats = null;
         }
         // Display skybox
         // this.addSkybox();
@@ -163,10 +166,6 @@ class MyGL2{
     }
 
     loadMol(dstr, dtype, mname, mtype, callback){
-        if (!this.model){
-            this.model = new MModel();
-        }
-        // console.log(`loadMol : ${mname}`)
 
         mname = this.model.loadMol(dstr, dtype, mname);
         if (mname){
@@ -177,9 +176,6 @@ class MyGL2{
     }
 
     reloadModel(mname, model="CPK"){
-        if (!this.model){
-            this.model = new MModel();
-        }
 
         if (this.meshlist.length == 0){
             // clear the old mol
@@ -299,7 +295,7 @@ class MyGL2{
             const hitObj = atom ? atom : bond;
 
             if ( hitObj ){ // since bond to atom is "under", [0] will always be the atom
-                appendInfo(`selected ${hitObj.type}-${hitObj.molecule}:${hitObj.chain}:${hitObj.group}:${hitObj.name}`);
+                appendInfo(` ${hitObj.type}:${hitObj.molecule}:${hitObj.chain}:${hitObj.group}:${hitObj.name}`);
                 //  the controls
                 this.controls.enabled = false;
 
@@ -362,22 +358,51 @@ class MyGL2{
     }
 
     show_tree(){
-        // var data = [
-        //     {
-        //         name: 'node1', id: 1,
-        //         children: [
-        //             { name: 'child1', id: 2 },
-        //             { name: 'child2', id: 3 }
-        //         ]
-        //     },
-        //     {
-        //         name: 'node2', id: 4,
-        //         children: [
-        //             { name: 'child3', id: 5 }
-        //         ]
-        //     }
-        // ];
-        // treeview(data);
+        $("#tree").html("");
+
+
+        // console.log(data)
+        // this.tree = new IndentedCollapsibleTree("tree", this.model.get_tree_data());
+        const setting = {
+            data: {
+                simpleData: {
+                    enable: true
+                }
+            }
+        };
+
+        const zNodes =[
+            { id:1, pId:0, name:"pNode 1", open:true},
+            { id:11, pId:1, name:"pNode 11"},
+            { id:111, pId:11, name:"leaf node 111"},
+            { id:112, pId:11, name:"leaf node 112"},
+            { id:113, pId:11, name:"leaf node 113"},
+            { id:114, pId:11, name:"leaf node 114"},
+            { id:12, pId:1, name:"pNode 12"},
+            { id:121, pId:12, name:"leaf node 121"},
+            { id:122, pId:12, name:"leaf node 122"},
+            { id:123, pId:12, name:"leaf node 123"},
+            { id:124, pId:12, name:"leaf node 124"},
+            { id:13, pId:1, name:"pNode 13 - no child", isParent:true},
+            { id:2, pId:0, name:"pNode 2"},
+            { id:21, pId:2, name:"pNode 21", open:true},
+            { id:211, pId:21, name:"leaf node 211"},
+            { id:212, pId:21, name:"leaf node 212"},
+            { id:213, pId:21, name:"leaf node 213"},
+            { id:214, pId:21, name:"leaf node 214"},
+            { id:22, pId:2, name:"pNode 22"},
+            { id:221, pId:22, name:"leaf node 221"},
+            { id:222, pId:22, name:"leaf node 222"},
+            { id:223, pId:22, name:"leaf node 223"},
+            { id:224, pId:22, name:"leaf node 224"},
+            { id:23, pId:2, name:"pNode 23"},
+            { id:231, pId:23, name:"leaf node 231"},
+            { id:232, pId:23, name:"leaf node 232"},
+            { id:233, pId:23, name:"leaf node 233"},
+            { id:234, pId:23, name:"leaf node 234"},
+            { id:3, pId:0, name:"pNode 3 - no child", isParent:true}
+        ];
+        $.fn.zTree.init($("#tree"), setting, zNodes);
     }
     toggle_highlight(hitObj){
         if (hitObj == undefined){
@@ -495,6 +520,13 @@ class MyGL2{
         return '#' + (function co(lor){   return (lor +=
           [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f'][Math.floor(Math.random()*16)])
           && (lor.length == 6) ?  lor : co(lor); })('');
+    }
+
+    setStatsPosition(top, left){
+        if (this.stats){
+            this.stats.domElement.style.top = `${top}px`;
+            this.stats.domElement.style.left = `${left}px`;
+        }
     }
 }
 

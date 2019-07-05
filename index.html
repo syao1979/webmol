@@ -34,14 +34,39 @@
 			}
 		</style>
 
+	    <style>
+	        /* tree view css*/
+/*	        .node circle {
+	          fill: #fff;
+	          stroke: steelblue;
+	          stroke-width: 1px;
+	        }
+
+	        .node text {
+	          font: 14px sans-serif;
+	        }
+
+	        .link {
+	          fill: none;
+	          stroke: #ccc;
+	          stroke-width: 1px;
+	        }*/
+
+
+	    </style>
+	    
+		<link rel="stylesheet" href="js/tree/zTreeStyle.css" type="text/css">
+		<!-- <script type="text/javascript" src="js/tree/jquery.ztree.core.js"></script> -->
+
 		<!-- tab ui -->
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 		<script type = "text/javascript" src = "https://cdnjs.cloudflare.com/ajax/libs/extjs/6.0.0/ext-all.js"></script>
 
-		<link rel="stylesheet" href="js/border.css">
+		<link rel="stylesheet" href="js/border/border.css">
 
+		<!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
 		<script type="text/javascript">
 			var DEBUG = true;
 		</script>
@@ -84,12 +109,11 @@ ATOM    645 1H2    G A  67       3.974  -5.385  10.510  1.00  0.00           H
 ATOM    646 2H2    G A  67       2.985  -6.042   9.223  1.00  0.00      	 H
     	</span>
     	
-		<div class="border-layout" style="height: 100%; width: 100%">
+		<div class="border-layout" style="height: 100%; width: 100%;">
 		    <div class="north resizable" size="30px">
-		        <div class="content" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px">
+		        <div class="content" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; padding: 2px">
 		            <table>
 						<tr>
-							<td style="width: 50px" nowrap> Open : </td>
 			    			<td style="width: 180px" nowrap>
 			    				<input type="file" id="file" name="file" /><output id="list"></output>
 			    			</td>
@@ -118,19 +142,19 @@ ATOM    646 2H2    G A  67       2.985  -6.042   9.223  1.00  0.00      	 H
 					</table>
 		        </div>
 		    </div>
-		    <div class="west resizable" size="100px">
-		        <div id="west_content" class="content" style="width: 100%; height: 100%">
-		            West 
+		    <div class="west resizable" size="200px">
+		        <div id="west_content" class="content" style="width: 100%; height: 100%; background-color: #fff; border: 1px solid #999">
+		            <div id="tree" class="ztree" style="width: 100%; height: 100%;"></div> 
 		        </div>
 		    </div>
-		    <div class="east resizable" size="100px">
+		    <div class="east resizable" size="1px">
 		        <div id="east_content" class="content" style="width: 100%; height: 100%">
-		            East
+		            Builder
 		        </div>
 		    </div>
 		    <div class="south resizable" size="10%">
 		        <div class="content" style="width: 100%; height: 100%; padding-left: 1px">
-		            <textarea id="info" style="width: 100%; height: 100%; box-sizing:border-box;" readonly></textarea>
+		            <textarea id="info" style="width: 99%; height: 99%; box-sizing:border-box;" readonly></textarea>
 		        </div>
 		    </div>
 		    <div class="center">
@@ -140,33 +164,6 @@ ATOM    646 2H2    G A  67       2.985  -6.042   9.223  1.00  0.00      	 H
 		    </div>
 		</div>
   
-  <div class="border-layout" style="height: 100%; width: 100%">
-    <div class="north resizable" style="height: 20px;">
-        <div class="content">
-            North
-        </div>
-    </div>
-    <div class="west resizable">
-        <div class="content">
-            West
-        </div>
-    </div>
-    <div class="east resizable" size="20%">
-        <div class="content">
-            East
-        </div>
-    </div>
-    <div class="south resizable" size="20%">
-        <div class="content">
-            South
-        </div>
-    </div>
-    <div class="center">
-        <div class="content">
-            Center
-        </div>
-    </div>
-</div>
     	<script src="./js/index.js"></script>
 	</body>
 </html>

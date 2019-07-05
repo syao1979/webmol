@@ -36,19 +36,20 @@ class MModel{
 
 
 	_addobj(atom){
+		// console.log(atom)
 		if ( !(atom.molecule in this.mol) ){
 			this.mol[atom.molecule] = {};
 		}
 
-		if ( !(atom.chainID in this.mol[atom.molecule]) ){
-			this.mol[atom.molecule][atom.chainID] = {};
+		if ( !(atom.chain in this.mol[atom.molecule]) ){
+			this.mol[atom.molecule][atom.chain] = {};
 		}
 		
-		if ( !(atom.resName in this.mol[atom.molecule][atom.chainID]) ){
-			this.mol[atom.molecule][atom.chainID][atom.resName] = [];
+		if ( !(atom.group in this.mol[atom.molecule][atom.chain]) ){
+			this.mol[atom.molecule][atom.chain][atom.group] = [];
 		}
 
-		this.mol[atom.molecule][atom.chainID][atom.resName].push(atom)
+		this.mol[atom.molecule][atom.chain][atom.group].push(atom)
 	}
 
 	get_gl_objects(mname, model="CPK"){
@@ -95,6 +96,35 @@ class MModel{
 		}
 
 		return alist;
+	}
+
+	get_tree_data(){
+		let data = { 
+			name : "model",
+			children : [],
+		};
+		if ( Object.entries(this.mol).length > 0 ){
+			// console.log(this.mol)
+			for (let mol in this.mol){
+				let mobj = { name : mol, children : []};
+				data.children.push(mobj);
+				for (let chain in this.mol[mol]) {
+					// console.log('chain ...')
+					// console.log(chain)
+					let cobj = { name : chain, children : []};
+					mobj.children.push(cobj);
+					for (let group in this.mol[mol][chain]){
+						let gobj = { name : group, children : []};
+						cobj.children.push(gobj);
+						this.mol[mol][chain][group].forEach ( (atm) => {
+							gobj.children.push({ name : atm.name });
+						})
+					}
+				}
+			}
+		}
+
+		return data;
 	}
 
 	//for a given molecule name, retur a list of all atoms
