@@ -103,6 +103,10 @@ class Atom extends THREE.Vector3 {
 		}
 		return this.ball(quality.qual, quality.size, quality.visible);
 	}
+
+	treeId(){
+		return `${this.molecule}-${this.chain}-${this.group}-${this.name}`;
+	}
 }
 
 Atom.MODEL = {
@@ -507,6 +511,11 @@ class Bond{
 			}
 			return this.cylinder(geotype)
 		}
+	}
+
+	treeId(){
+		const atom = this.pair[0];
+		return atom.treeId();
 	}
 }
 

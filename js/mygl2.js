@@ -402,7 +402,7 @@ class MyGL2{
             { id:234, pId:23, name:"leaf node 234"},
             { id:3, pId:0, name:"pNode 3 - no child", isParent:true}
         ];
-        $.fn.zTree.init($("#tree"), setting, zNodes);
+        $.fn.zTree.init($("#tree"), setting, this.model.get_tree_data2()); //zNodes);
     }
     toggle_highlight(hitObj){
         if (hitObj == undefined){
